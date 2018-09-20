@@ -1,6 +1,7 @@
 package ass;
 
 import ass.communication.GameContext;
+import ass.communication.JsonUtility;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -8,9 +9,6 @@ import java.util.Random;
 
 public class Test {
     public static void main(String[] args){
-        GsonBuilder builder = new GsonBuilder();
-        builder.serializeNulls();
-        Gson gson = builder.create();
 
         GameContext gc = new GameContext();
         gc.setCurrentUser("TPA");
@@ -21,10 +19,10 @@ public class Test {
                 gc.getGameBoard()[i][j] = (char)(r.nextInt((90 - 65) + 1) + 65);
             }
         }
-        String jsonStr = gson.toJson(gc);
+        String jsonStr = JsonUtility.toJson(gc);
         System.out.println(jsonStr);
 
-        gc = gson.fromJson(jsonStr, GameContext.class);
+        gc = JsonUtility.fromJson(jsonStr, GameContext.class);
         System.out.println("Back to object, current user = " + gc.getCurrentUser());
     }
 }
