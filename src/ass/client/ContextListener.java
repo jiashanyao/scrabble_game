@@ -1,4 +1,4 @@
-package ass.server;
+package ass.client;
 
 import java.io.BufferedReader;
 import java.net.SocketException;
