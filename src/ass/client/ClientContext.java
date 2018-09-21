@@ -1,4 +1,4 @@
-package ass.server;
+package ass.client;
 
 import ass.communication.GameContext;
 import org.apache.commons.beanutils.BeanUtils;
