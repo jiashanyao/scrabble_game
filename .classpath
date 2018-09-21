@@ -7,9 +7,6 @@
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry excluding="src/|external_library/" kind="src" path=""/>
-	<classpathentry kind="lib" path="commons-beanutils-1.9.3.jar"/>
-	<classpathentry kind="lib" path="commons-lang3-3.8.jar"/>
-	<classpathentry kind="lib" path="gson-2.8.5.jar"/>
 	<classpathentry kind="lib" path="external_library/commons-beanutils-1.9.3.jar"/>
 	<classpathentry kind="lib" path="external_library/commons-lang3-3.8.jar"/>
 	<classpathentry kind="lib" path="external_library/gson-2.8.5.jar"/>
