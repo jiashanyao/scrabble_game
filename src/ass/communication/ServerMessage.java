@@ -1,5 +1,8 @@
 package ass.communication;
 
+import java.util.Calendar;
+import java.util.Date;
+
 /**
  * Created by hugh on 20/9/18.
  */
@@ -15,7 +18,16 @@ public class ServerMessage {
 
     private Long expiredTime;
 
-    public ServerMessage() {
+    public ServerMessage(GameContext gameContext) {
+        this.gameContext = gameContext;
+
+        Date now = new Date();
+        this.time = now.getTime();
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(now);
+        calendar.add(Calendar.SECOND, 15);
+        this.expiredTime = calendar.getTime().getTime();
     }
 
     public Type getType() {
