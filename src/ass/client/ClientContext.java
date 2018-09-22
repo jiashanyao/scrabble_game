@@ -1,27 +1,17 @@
 package ass.client;
 
-import ass.communication.GameContext;
-import org.apache.commons.beanutils.BeanUtils;
+import ass.communication.ServerMessage;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
-import java.lang.reflect.InvocationTargetException;
+import java.util.Comparator;
+import java.util.concurrent.PriorityBlockingQueue;
 
-public class ClientContext extends GameContext {
+public class ClientContext extends PriorityBlockingQueue<ServerMessage> {
 
-    private PropertyChangeSupport changeSupport;
-
-    public ClientContext(GameContext gameContext) throws InvocationTargetException, IllegalAccessException {
-        super();
-        BeanUtils.copyProperties(this, gameContext);
-        this.changeSupport = new PropertyChangeSupport(this);
-    }
-
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        changeSupport.addPropertyChangeListener(listener);
-    }
-
-    public void removePropertyChangeListener(PropertyChangeListener listener) {
-        changeSupport.removePropertyChangeListener(listener);
+    public ClientContext() {
+        super(1, new Comparator<ServerMessage>() {
+            @Override public int compare(ServerMessage o1, ServerMessage o2) {
+                return Math.toIntExact(o2.getTime() - o1.getTime()) * (-1);
+            }
+        });
     }
 }

@@ -1,10 +1,12 @@
 package ass.client;
 
+import ass.communication.JsonUtility;
+import ass.communication.ServerMessage;
+
 import java.io.BufferedReader;
 import java.net.SocketException;
 
 public class ContextListener extends Thread {
-
 
     private BufferedReader reader;
     private ClientContext context;
@@ -14,14 +16,17 @@ public class ContextListener extends Thread {
         this.context = context;
     }
 
-    @Override
-    public void run() {
+    @Override public void run() {
         try {
             String msg = null;
             while ((msg = reader.readLine()) != null) {
                 try {
-                    //TODO fromJson
-                    //TODO ClientContext update UI
+                    // parse message
+                    ServerMessage serverMessage = JsonUtility.fromJson(msg, ServerMessage.class);
+
+                    //update ClientContext
+                    context.add(serverMessage);
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

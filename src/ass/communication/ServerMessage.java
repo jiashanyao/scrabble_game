@@ -11,6 +11,10 @@ public class ServerMessage {
 
     private Long time;
 
+    private String message;
+
+    private Long expiredTime;
+
     public ServerMessage() {
     }
 
@@ -36,6 +40,22 @@ public class ServerMessage {
 
     public void setTime(Long time) {
         this.time = time;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public Long getExpiredTime() {
+        return expiredTime;
+    }
+
+    public void setExpiredTime(Long expiredTime) {
+        this.expiredTime = expiredTime;
     }
 
     public enum Type {
