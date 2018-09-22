@@ -37,41 +37,53 @@ public class ClientConnection extends Thread {
             action.put(ClientMessage.Type.SYNC, gc);
 
             GameContext gc1 = new GameContext();
-            BeanUtils.copyProperties(gc1, gc);
             gc1.setGameStatus(GameContext.GameStatus.INVITING);
+            gc1.setIdleUsers(new String[] { "Zoe"});
             gc1.setInvitedUser(new String[] {"Hugh", "AKB69"});
             gc1.setCurrentUser("Hugh");
             action.put(ClientMessage.Type.INVITATION, gc);
 
             GameContext gc2 = new GameContext();
-            BeanUtils.copyProperties(gc2, gc1);
             gc2.setGameStatus(GameContext.GameStatus.GAMING);
             gc2.setInvitedUser(null);
             gc2.setIdleUsers(new String[] {"Zoe"});
             gc2.setGamingUsers(new String[] {"Hugh", "AKB69"});
-            gc2.setGameBoard(new Character[20][20]);
+            Character[][] gameBoard = new Character[20][20];
+            HashMap<String,Integer> scores = new HashMap<>();
             Random r = new Random();
             for (int i = 0; i < 20; i++) {
                 for (int j = 0; j < 20; j++) {
-                    gc.getGameBoard()[i][j] = (char) (r.nextInt((90 - 65) + 1) + 65);
+                    gameBoard[i][j] = (char) (r.nextInt((90 - 65) + 1) + 65);
                 }
             }
 
-            gc2.setScores(new HashMap<String, Integer>());
-            gc.getScores().put("Hugh", 94);
-            gc.getScores().put("AKB69", 87);
+            scores.put("Hugh", 94);
+            scores.put("AKB69", 87);
+
+            gc2.setGameBoard(gameBoard);
+            gc2.setScores(scores);
             action.put(ClientMessage.Type.START, gc2);
 
             GameContext gc3 = new GameContext();
-            BeanUtils.copyProperties(gc3, gc2);
+            gc3.setGameStatus(GameContext.GameStatus.GAMING);
+            gc3.setInvitedUser(null);
+            gc3.setIdleUsers(new String[] {"Zoe"});
+            gc3.setGamingUsers(new String[] {"Hugh", "AKB69"});
             gc3.setCurrentUser("AKB69");
-            gc3.getGameBoard()[0][0] = Character.valueOf('O');
-            gc3.getGameBoard()[19][19] = Character.valueOf('O');
+            gameBoard[0][0] = Character.valueOf('O');
+            gameBoard[19][19] = Character.valueOf('O');
+            gc3.setGameBoard(gameBoard);
+            gc3.setScores(scores);
             action.put(ClientMessage.Type.PASS, gc3);
 
             GameContext gc4 = new GameContext();
-            BeanUtils.copyProperties(gc4, gc3);
+            gc4.setGameStatus(GameContext.GameStatus.GAMING);
+            gc4.setInvitedUser(null);
+            gc4.setIdleUsers(new String[] {"Zoe"});
+            gc4.setGamingUsers(new String[] {"Hugh", "AKB69"});
             gc4.setCurrentUser("Hugh");
+            gc4.setGameBoard(gameBoard);
+            gc4.setScores(scores);
             action.put(ClientMessage.Type.HIGHLIGHT, gc4);
 
             action.put(ClientMessage.Type.END, gc1);
@@ -91,7 +103,7 @@ public class ClientConnection extends Thread {
                 System.out.println(clientMsg);
                 ClientMessage clientMessage = JsonUtility.fromJson(clientMsg, ClientMessage.class);
                 ClientMessage.Type type = clientMessage.getType();
-                ServerMessage sm = new ServerMessage();
+                ServerMessage sm = new ServerMessage(new GameContext());
                 sm.setType(ServerMessage.Type.INFORMATION);
                 sm.setGameContext(action.get(type));
                 sm.setTime(new Date().getTime());

@@ -7,7 +7,6 @@ public final class JsonUtility {
     static final private Gson gson = new GsonBuilder().create();
 
     static public <T> T fromJson(String jsonString, Class<T> clazz) {
-
         return gson.fromJson(jsonString, clazz);
     }
 
