@@ -1,38 +1,76 @@
 package ass.client;
 
+import ass.communication.ClientMessage;
+import ass.communication.JsonUtility;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
-
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.*;
+import java.net.Socket;
 
 /**
  * Created by hugh on 18/9/18.
  */
 public class ClientConsole extends JFrame {
-	private JTable playerTable;
-	private JTable gameTable;
-	private JTable table;
+    private JTable playerTable;
+    private JTable gameTable;
+    private Socket socket;
+    private BufferedWriter writer;
+    private ClientContext context;
+
 
     public static void main(String[] args) {
-        ClientConsole gt = new ClientConsole();
-        gt.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        gt.pack();
-        gt.setVisible(true);
+        EventQueue.invokeLater(new Runnable() {
+            @Override public void run() {
+                try {
+                    String url = args[0];
+                    Integer port = Integer.parseInt(args[1]);
+                    String username = args[2];
+                    ClientConsole gt = new ClientConsole(url, port, username);
+                    gt.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    gt.pack();
+                    gt.setVisible(true);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+        });
+
     }
 
-    public ClientConsole() {
-    	setTitle("Scrabble Game");
+    public ClientConsole(String url, Integer port, String username) throws IOException {
+
+        this.socket = new Socket(url, port);
+        this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
+        this.context = new ClientContext();
+        ContextListener listener = new ContextListener(new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8")), this.context);
+
+        // pass username to server
+        ClientMessage cm = new ClientMessage();
+        cm.setType(ClientMessage.Type.SYNC);
+        cm.setUserId(username);
+        this.writer.write(JsonUtility.toJson(cm)+"\n");
+        this.writer.flush();
+
+        setTitle("Scrabble Game");
         GridBagLayout gridBagLayout = new GridBagLayout();
-        gridBagLayout.columnWidths = new int[] {30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30};
-        gridBagLayout.rowHeights = new int[]{30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 0, 30};
-        gridBagLayout.columnWeights = new double[]{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
-        gridBagLayout.rowWeights = new double[]{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0};
+        gridBagLayout.columnWidths =
+            new int[] {30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30};
+        gridBagLayout.rowHeights = new int[] {30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 0, 30};
+        gridBagLayout.columnWeights =
+            new double[] {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                1.0, 1.0};
+        gridBagLayout.rowWeights = new double[] {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0};
         getContentPane().setLayout(gridBagLayout);
-        
+
         /*
          * Message Area
          */
@@ -46,7 +84,7 @@ public class ClientConsole extends JFrame {
         gbc_lblMessageArea.gridy = 1;
         getContentPane().add(lblMessageArea, gbc_lblMessageArea);
 
-        
+
         /*
          * Game Area
          */
@@ -64,47 +102,34 @@ public class ClientConsole extends JFrame {
         gameTable.setTableHeader(null);
         gameTable.setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
         gameTable.setGridColor(Color.GRAY);
-        gameTable.setMaximumSize(new Dimension(600,600));
-        String[] gameColumnNames = {
-        	"1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20"
-        };
-        
-        Object[][] gameData = {
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-        	    {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}
-                };
-        
-        DefaultTableModel gameDm = new DefaultTableModel(gameData,gameColumnNames);
+        gameTable.setMaximumSize(new Dimension(600, 600));
+        String[] gameColumnNames = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"};
+
+        Object[][] gameData =
+            {{"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}};
+
+        DefaultTableModel gameDm = new DefaultTableModel(gameData, gameColumnNames);
         gameTable.setModel(gameDm);
         TableColumnModel gameColumModle = gameTable.getColumnModel();
-        
+
         gameTable.setRowHeight(30);
-        for (int i = 0; i<gameTable.getColumnCount();i++) {
-        	gameColumModle.getColumn(i).setMaxWidth(30);
-        	gameColumModle.getColumn(i).setMinWidth(30);
+        for (int i = 0; i < gameTable.getColumnCount(); i++) {
+            gameColumModle.getColumn(i).setMaxWidth(30);
+            gameColumModle.getColumn(i).setMinWidth(30);
 
 
         }
-        
-        
+
+
         JScrollPane gameScrollPane = new JScrollPane(gameTable);
         GridBagConstraints gbc_gameScrollPane = new GridBagConstraints();
         gbc_gameScrollPane.fill = GridBagConstraints.BOTH;
@@ -118,26 +143,16 @@ public class ClientConsole extends JFrame {
         gameScrollPane.setPreferredSize(new Dimension(600, 600));
         gameScrollPane.setMaximumSize(new Dimension(600, 600));
         gameScrollPane.setMinimumSize(new Dimension(600, 600));
-        
+
         DefaultTableCellRenderer gameCellRenderer = new DefaultTableCellRenderer();
         gameCellRenderer.setHorizontalAlignment(JLabel.CENTER);
-        
-        for(int i=0; i<gameTable.getColumnCount();i++) {
+
+        for (int i = 0; i < gameTable.getColumnCount(); i++) {
             gameTable.getColumnModel().getColumn(i).setCellRenderer(gameCellRenderer);
             gameTable.getColumnModel().getColumn(i).setMinWidth(30);
             gameTable.getColumnModel().getColumn(i).setMaxWidth(30);
         }
-        
-        
-//        Container pane = getContentPane();
-//      for (int i = 0; i < 20; i++) {
-//    	for (int j = 0; j < 20; j++) {
-//    		JButton button = new JButton(Integer.toString(i + 1));
-//    		panel.add(button);
-//    	}
-//    	
-//    }
-        
+
         /*
          * Player Info Area
          * 1) idle player list
@@ -154,7 +169,7 @@ public class ClientConsole extends JFrame {
         gbc_lblIdlePlayers.gridx = 22;
         gbc_lblIdlePlayers.gridy = 1;
         getContentPane().add(lblIdlePlayers, gbc_lblIdlePlayers);
-        
+
         JList<String> idlePlayerList = new JList<String>();
         idlePlayerList.setFont(new Font("SimSun", Font.PLAIN, 14));
         GridBagConstraints gbc_idelPlayerList = new GridBagConstraints();
@@ -165,14 +180,14 @@ public class ClientConsole extends JFrame {
         gbc_idelPlayerList.gridx = 23;
         gbc_idelPlayerList.gridy = 2;
         idlePlayerList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        
+
         //TODO: change to get data from response
         DefaultListModel<String> listModel = new DefaultListModel<String>();
         listModel.addElement("Jane Doe (invited)");
         listModel.addElement("John Smith (invited)");
         listModel.addElement("Kathy Green");
         idlePlayerList.setModel(listModel);
-        
+
         JScrollPane listScrollPane = new JScrollPane(idlePlayerList);
         GridBagConstraints gbc_listScrollPane = new GridBagConstraints();
         gbc_listScrollPane.gridwidth = 11;
@@ -182,7 +197,7 @@ public class ClientConsole extends JFrame {
         gbc_listScrollPane.gridx = 22;
         gbc_listScrollPane.gridy = 2;
         getContentPane().add(listScrollPane, gbc_listScrollPane);
-              
+
         JLabel lblPlayingPlayers = new JLabel("Playing Players");
         lblPlayingPlayers.setFont(new Font("SimSun", Font.PLAIN, 18));
         GridBagConstraints gbc_lblPlayingPlayers = new GridBagConstraints();
@@ -192,37 +207,28 @@ public class ClientConsole extends JFrame {
         gbc_lblPlayingPlayers.gridx = 22;
         gbc_lblPlayingPlayers.gridy = 12;
         getContentPane().add(lblPlayingPlayers, gbc_lblPlayingPlayers);
-               
-		playerTable = new JTable();
-		playerTable.setFont(new Font("SimSun", Font.PLAIN, 14));
-		playerTable.setEnabled(false);
-//        playerTable.setRowHeight(20);
-		GridBagConstraints gbc_playerTable = new GridBagConstraints();
-		gbc_playerTable.fill = GridBagConstraints.BOTH;
-		gbc_playerTable.gridwidth = 11;
-		gbc_playerTable.gridx = 22;
-		gbc_playerTable.gridheight = 8;
-		gbc_playerTable.gridy = 13;
-		gbc_playerTable.insets = new Insets(0, 0, 5, 5);
-	
-		String[] plColumnNames = {
-			"User Name",
-			"Status",
-			"Score"
-		};
-		
+
+        playerTable = new JTable();
+        playerTable.setFont(new Font("SimSun", Font.PLAIN, 14));
+        playerTable.setEnabled(false);
+        //        playerTable.setRowHeight(20);
+        GridBagConstraints gbc_playerTable = new GridBagConstraints();
+        gbc_playerTable.fill = GridBagConstraints.BOTH;
+        gbc_playerTable.gridwidth = 11;
+        gbc_playerTable.gridx = 22;
+        gbc_playerTable.gridheight = 8;
+        gbc_playerTable.gridy = 13;
+        gbc_playerTable.insets = new Insets(0, 0, 5, 5);
+
+        String[] plColumnNames = {"User Name", "Status", "Score"};
+
         //TODO change to listener
-		Object[][] plData = {
-    	    {"Kathy", "Playing", new Integer(10)},
-    	    {"Snowboarding", "", new Integer(5)},
-    	    {"John", "", new Integer(4)},
-    	    {"Doe", "", new Integer(2)},
-    	    {"Joe", "", new Integer(10)}
-		};
-			
-		DefaultTableModel dm = new DefaultTableModel(plData, plColumnNames); 
-		playerTable.setModel(dm);
-      
+        Object[][] plData =
+            {{"Kathy", "Playing", new Integer(10)}, {"Snowboarding", "", new Integer(5)}, {"John", "", new Integer(4)}, {"Doe", "", new Integer(2)}, {"Joe", "", new Integer(10)}};
+
+        DefaultTableModel dm = new DefaultTableModel(plData, plColumnNames);
+        playerTable.setModel(dm);
+
         JScrollPane tableScrollPane = new JScrollPane(playerTable);
         GridBagConstraints gbc_tableScrollPane = new GridBagConstraints();
         gbc_tableScrollPane.fill = GridBagConstraints.BOTH;
@@ -234,11 +240,11 @@ public class ClientConsole extends JFrame {
         tableScrollPane.setBorder(BorderFactory.createEmptyBorder());
         tableScrollPane.setPreferredSize(new Dimension(50, 50));
         getContentPane().add(tableScrollPane, gbc_tableScrollPane);
-        
+
         /*
          * Game Button Area
          */
-        
+
         JButton btnInvite = new JButton("Invite");
         btnInvite.setFont(new Font("SimSun", Font.PLAIN, 18));
         GridBagConstraints gbc_btnInvite = new GridBagConstraints();
@@ -248,7 +254,7 @@ public class ClientConsole extends JFrame {
         gbc_btnInvite.gridx = 22;
         gbc_btnInvite.gridy = 10;
         getContentPane().add(btnInvite, gbc_btnInvite);
-        
+
         JButton btnStartGame = new JButton("Start Game");
         btnStartGame.setFont(new Font("SimSun", Font.PLAIN, 18));
         GridBagConstraints gbc_btnStartGame = new GridBagConstraints();
@@ -258,7 +264,7 @@ public class ClientConsole extends JFrame {
         gbc_btnStartGame.gridx = 28;
         gbc_btnStartGame.gridy = 10;
         getContentPane().add(btnStartGame, gbc_btnStartGame);
-        
+
         JButton btnPass = new JButton("Pass");
         btnPass.setFont(new Font("SimSun", Font.PLAIN, 18));
         GridBagConstraints gbc_btnPass = new GridBagConstraints();
@@ -268,12 +274,12 @@ public class ClientConsole extends JFrame {
         gbc_btnPass.gridx = 22;
         gbc_btnPass.gridy = 21;
         getContentPane().add(btnPass, gbc_btnPass);
-        
+
         JButton btnEndGame = new JButton("End Game");
         btnEndGame.setFont(new Font("SimSun", Font.PLAIN, 18));
         btnEndGame.addActionListener(new ActionListener() {
-        	public void actionPerformed(ActionEvent e) {
-        	}
+            public void actionPerformed(ActionEvent e) {
+            }
         });
         GridBagConstraints gbc_btnEndGame = new GridBagConstraints();
         gbc_btnEndGame.fill = GridBagConstraints.HORIZONTAL;
@@ -282,11 +288,14 @@ public class ClientConsole extends JFrame {
         gbc_btnEndGame.gridx = 28;
         gbc_btnEndGame.gridy = 21;
         getContentPane().add(btnEndGame, gbc_btnEndGame);
-        
+
         btnStartGame.addActionListener(new ActionListener() {
-        	public void actionPerformed(ActionEvent e) {
-        	}
+            public void actionPerformed(ActionEvent e) {
+            }
         });
+
+        // start to listen
+        listener.start();
     }
 }
 

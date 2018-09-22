@@ -22,6 +22,7 @@ public class ContextListener extends Thread {
             while ((msg = reader.readLine()) != null) {
                 try {
                     // parse message
+                    System.out.println("get message:" + msg);
                     ServerMessage serverMessage = JsonUtility.fromJson(msg, ServerMessage.class);
 
                     //update ClientContext
