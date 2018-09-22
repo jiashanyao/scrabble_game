@@ -3,9 +3,12 @@ package ass.client;
 import ass.communication.ServerMessage;
 
 import java.util.Comparator;
+import java.util.Date;
 import java.util.concurrent.PriorityBlockingQueue;
 
 public class ClientContext extends PriorityBlockingQueue<ServerMessage> {
+
+    private Date currentVersion;
 
     public ClientContext() {
         super(1, new Comparator<ServerMessage>() {
@@ -13,5 +16,14 @@ public class ClientContext extends PriorityBlockingQueue<ServerMessage> {
                 return Math.toIntExact(o2.getTime() - o1.getTime()) * (-1);
             }
         });
+        this.currentVersion = new Date();
+    }
+
+    public Date getCurrentVersion() {
+        return currentVersion;
+    }
+
+    public void setCurrentVersion(Date currentVersion) {
+        this.currentVersion = currentVersion;
     }
 }

@@ -1,7 +1,9 @@
 package ass.client;
 
 import ass.communication.ClientMessage;
+import ass.communication.GameContext;
 import ass.communication.JsonUtility;
+import ass.communication.ServerMessage;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -12,11 +14,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.Socket;
+import java.util.Date;
 
 /**
  * Created by hugh on 18/9/18.
  */
 public class ClientConsole extends JFrame {
+    static final Integer BOARD_SIZE = 20;
+
+    private String[][] plainBoard;
     private JTable playerTable;
     private JTable gameTable;
     private Socket socket;
@@ -38,7 +44,7 @@ public class ClientConsole extends JFrame {
 
                 } catch (IOException e) {
                     e.printStackTrace();
-                } catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -46,7 +52,19 @@ public class ClientConsole extends JFrame {
 
     }
 
+    private static String[][] createGameBoardModel() {
+        String[][] gameboard = new String[BOARD_SIZE][BOARD_SIZE];
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            for (int j = 0; j < BOARD_SIZE; j++) {
+                gameboard[i][j] = "";
+            }
+        }
+        return gameboard;
+    }
+
     public ClientConsole(String url, Integer port, String username) throws IOException {
+
+        this.plainBoard = createGameBoardModel();
 
         this.socket = new Socket(url, port);
         this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
@@ -57,7 +75,7 @@ public class ClientConsole extends JFrame {
         ClientMessage cm = new ClientMessage();
         cm.setType(ClientMessage.Type.SYNC);
         cm.setUserId(username);
-        this.writer.write(JsonUtility.toJson(cm)+"\n");
+        this.writer.write(JsonUtility.toJson(cm) + "\n");
         this.writer.flush();
 
         setTitle("Scrabble Game");
@@ -105,20 +123,7 @@ public class ClientConsole extends JFrame {
         gameTable.setMaximumSize(new Dimension(600, 600));
         String[] gameColumnNames = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"};
 
-        Object[][] gameData =
-            {{"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-                {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}};
-
-        DefaultTableModel gameDm = new DefaultTableModel(gameData, gameColumnNames);
-        gameTable.setModel(gameDm);
+        gameTable.setModel(new DefaultTableModel(plainBoard, gameColumnNames));
         TableColumnModel gameColumModle = gameTable.getColumnModel();
 
         gameTable.setRowHeight(30);
@@ -296,6 +301,69 @@ public class ClientConsole extends JFrame {
 
         // start to listen
         listener.start();
+        BackgroundThread backgroundThread = new BackgroundThread() {
+            @Override public void run() {
+                while (true) {
+                    if (!context.isEmpty()) {
+                        try {
+                            ServerMessage headMessage = context.take();
+                            Date newVersion = new Date(headMessage.getTime());
+                            ServerMessage.Type type = headMessage.getType();
+                            if (ServerMessage.Type.REQUEST.equals(type)) {
+                                Date expiredTime = new Date(headMessage.getExpiredTime());
+                                if (expiredTime.after(new Date())) {
+                                    JOptionPane.showConfirmDialog(null, headMessage.getMessage() + "?");
+                                }
+                            }
+
+                            if (context.getCurrentVersion().before(newVersion) && null != headMessage.getGameContext()) {
+                                //TODO update pane
+                                GameContext gameContext = headMessage.getGameContext();
+                                GameContext.GameStatus status = gameContext.getGameStatus();
+
+                                switch (status) {
+                                    case IDLING:
+                                        gameTable.setModel(new DefaultTableModel(plainBoard, gameColumnNames));
+                                        gameTable.setEnabled(false);
+                                        listModel.clear();
+                                        for(String user:gameContext.getIdleUsers()){
+                                            listModel.addElement(user);
+                                        }
+
+                                        DefaultTableModel dm = new DefaultTableModel(new Object[][]{}, plColumnNames);
+                                        playerTable.setModel(dm);
+                                        idlePlayerList.setModel(listModel);
+                                        btnStartGame.setEnabled(false);
+                                        btnPass.setEnabled(false);
+                                        btnEndGame.setEnabled(false);
+                                        break;
+                                    case GAMING:
+                                        break;
+                                    case INVITING:
+                                        break;
+                                    case VOTING:
+                                        break;
+                                    default:
+                                        throw new IllegalArgumentException("Game status miss match");
+
+                                }
+                                context.setCurrentVersion(newVersion);
+                            }
+                        } catch (InterruptedException e) {
+                            //TODO handle blocking
+                            e.printStackTrace();
+                        } catch (IllegalArgumentException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+
+
+                }
+            }
+
+        };
+        backgroundThread.start();
     }
 }
 

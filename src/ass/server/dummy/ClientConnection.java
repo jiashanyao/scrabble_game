@@ -38,7 +38,7 @@ public class ClientConnection extends Thread {
 
             GameContext gc1 = new GameContext();
             gc1.setGameStatus(GameContext.GameStatus.INVITING);
-            gc.setIdleUsers(new String[] { "Zoe"});
+            gc1.setIdleUsers(new String[] { "Zoe"});
             gc1.setInvitedUser(new String[] {"Hugh", "AKB69"});
             gc1.setCurrentUser("Hugh");
             action.put(ClientMessage.Type.INVITATION, gc);

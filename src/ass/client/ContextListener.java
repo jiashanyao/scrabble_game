@@ -36,7 +36,6 @@ public class ContextListener extends Thread {
             System.out.println("Socket closed because the user typed exit");
         } catch (Exception e) {
             e.printStackTrace();
-
         }
 
     }
