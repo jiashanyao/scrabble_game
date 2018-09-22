@@ -14,7 +14,7 @@ public class GameContext {
 
     private String currentUser;
 
-    private Character[][] gameBoard;
+    private String[][] gameBoard;
 
     private Map<String, Integer> scores;
 
@@ -61,11 +61,11 @@ public class GameContext {
         this.currentUser = currentUser;
     }
 
-    public Character[][] getGameBoard() {
+    public String[][] getGameBoard() {
         return gameBoard;
     }
 
-    public void setGameBoard(Character[][] gameBoard) {
+    public void setGameBoard(String[][] gameBoard) {
         this.gameBoard = gameBoard;
     }
 

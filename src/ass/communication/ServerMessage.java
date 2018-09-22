@@ -16,6 +16,10 @@ public class ServerMessage {
 
     private String message;
 
+    private Integer cellX;
+
+    private Integer cellY;
+
     private Long expiredTime;
 
     public ServerMessage(GameContext gameContext) {
@@ -60,6 +64,22 @@ public class ServerMessage {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public Integer getCellX() {
+        return cellX;
+    }
+
+    public void setCellX(Integer cellX) {
+        this.cellX = cellX;
+    }
+
+    public Integer getCellY() {
+        return cellY;
+    }
+
+    public void setCellY(Integer cellY) {
+        this.cellY = cellY;
     }
 
     public Long getExpiredTime() {
