@@ -461,7 +461,6 @@ public class ClientConsole extends JFrame {
                             Date newVersion = new Date(headMessage.getTime());
                             ServerMessage.Type type = headMessage.getType();
 
-
                             //update pane
                             if (context.getCurrentVersion().before(newVersion) && null != headMessage.getGameContext()) {
                                 gameContext = headMessage.getGameContext();
@@ -556,17 +555,17 @@ public class ClientConsole extends JFrame {
                                         if (JOptionPane.YES_OPTION == dialogResult) {
                                             if (GameContext.GameStatus.HIGHLIGHT.equals(status)) {
                                                 //TODO call zoe Method
+                                                clientMessage.setHighLight(new String[]{"",""});
                                             }
-                                            writer.write(JsonUtility.toJson(clientMessage) + "\n");
-                                            writer.flush();
+                                            clientMessage.setResponse(true);
                                         }else {
-                                            //NO
-                                            if(GameContext.GameStatus.HIGHLIGHT.equals(status)){
-                                                writer.write(JsonUtility.toJson(clientMessage) + "\n");
-                                                writer.flush();
-                                            }
+                                            clientMessage.setResponse(false);
                                         }
+
+                                        writer.write(JsonUtility.toJson(clientMessage) + "\n");
+                                        writer.flush();
                                     } catch (IOException e) {
+                                        //TODO handle
                                         e.printStackTrace();
                                     }
                                 }
