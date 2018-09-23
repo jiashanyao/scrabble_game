@@ -48,12 +48,12 @@ public class ClientConnection extends Thread {
             gc2.setInvitedUser(null);
             gc2.setIdleUsers(new String[] {"Zoe"});
             gc2.setGamingUsers(new String[] {"Hugh", "AKB69"});
-            Character[][] gameBoard = new Character[20][20];
+            String[][] gameBoard = new String[20][20];
             HashMap<String,Integer> scores = new HashMap<>();
             Random r = new Random();
             for (int i = 0; i < 20; i++) {
                 for (int j = 0; j < 20; j++) {
-                    gameBoard[i][j] = (char) (r.nextInt((90 - 65) + 1) + 65);
+                    gameBoard[i][j] = new Integer(r.nextInt((90 - 65) + 1) + 65).toString();
                 }
             }
 
@@ -70,8 +70,8 @@ public class ClientConnection extends Thread {
             gc3.setIdleUsers(new String[] {"Zoe"});
             gc3.setGamingUsers(new String[] {"Hugh", "AKB69"});
             gc3.setCurrentUser("AKB69");
-            gameBoard[0][0] = Character.valueOf('O');
-            gameBoard[19][19] = Character.valueOf('O');
+            gameBoard[0][0] = "0";
+            gameBoard[19][19] = "0";
             gc3.setGameBoard(gameBoard);
             gc3.setScores(scores);
             action.put(ClientMessage.Type.PASS, gc3);

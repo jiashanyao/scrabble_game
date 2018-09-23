@@ -12,11 +12,11 @@ public class Test {
 
         GameContext gc = new GameContext();
         gc.setCurrentUser("TPA");
-        gc.setGameBoard(new Character[20][20]);
+        gc.setGameBoard(new String[20][20]);
         Random r = new Random();
         for(int i = 0; i< 20; i++){
             for(int j = 0; j<20;j++){
-                gc.getGameBoard()[i][j] = (char)(r.nextInt((90 - 65) + 1) + 65);
+                gc.getGameBoard()[i][j] =new Integer(r.nextInt((90 - 65) + 1) + 65).toString();
             }
         }
         String jsonStr = JsonUtility.toJson(gc);
