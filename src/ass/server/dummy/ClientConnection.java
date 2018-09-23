@@ -103,7 +103,7 @@ public class ClientConnection extends Thread {
                 System.out.println(clientMsg);
                 ClientMessage clientMessage = JsonUtility.fromJson(clientMsg, ClientMessage.class);
                 ClientMessage.Type type = clientMessage.getType();
-                ServerMessage sm = new ServerMessage(new GameContext());
+                ServerMessage sm = new ServerMessage();
                 sm.setType(ServerMessage.Type.INFORMATION);
                 sm.setGameContext(action.get(type));
                 sm.setTime(new Date().getTime());

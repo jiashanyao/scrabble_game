@@ -14,10 +14,6 @@ public class GameContext {
 
     private String currentUser;
 
-    private Integer cellX;
-
-    private Integer cellY;
-
     private String[][] gameBoard;
 
     private Map<String, Integer> scores;
@@ -65,22 +61,6 @@ public class GameContext {
         this.currentUser = currentUser;
     }
 
-    public Integer getCellX() {
-        return cellX;
-    }
-
-    public void setCellX(Integer cellX) {
-        this.cellX = cellX;
-    }
-
-    public Integer getCellY() {
-        return cellY;
-    }
-
-    public void setCellY(Integer cellY) {
-        this.cellY = cellY;
-    }
-
     public String[][] getGameBoard() {
         return gameBoard;
     }
@@ -98,7 +78,7 @@ public class GameContext {
     }
 
     public enum GameStatus {
-        IDLING, INVITING, GAMING, HIGHLIGHT, VOTING
+        IDLING, INVITING, GAMING, VOTING
     }
 
 }

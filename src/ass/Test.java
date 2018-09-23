@@ -25,7 +25,7 @@ public class Test {
         gc = JsonUtility.fromJson(jsonStr, GameContext.class);
         System.out.println("Back to object, current user = " + gc.getCurrentUser());
 
-        ServerMessage sm = new ServerMessage(gc);
+        ServerMessage sm = new ServerMessage();
         sm.setGameContext(gc);
         sm.setType(ServerMessage.Type.REQUEST);
         sm.setMessage("How are You?");
