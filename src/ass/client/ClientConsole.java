@@ -33,7 +33,7 @@ public class ClientConsole extends JFrame {
 
     static {
         Map<GameContext.GameStatus, ClientMessage.Type> map = new HashMap<>();
-        map.put(GameContext.GameStatus.INVITING, ClientMessage.Type.INVITATION);
+        map.put(GameContext.GameStatus.INVITING, ClientMessage.Type.INVITATION_CONFIRM);
         map.put(GameContext.GameStatus.HIGHLIGHT, ClientMessage.Type.HIGHLIGHT);
         RESPONSE_MAP = Collections.unmodifiableMap(map);
 
@@ -103,7 +103,7 @@ public class ClientConsole extends JFrame {
         this.userId = username;
         // pass username to server
         ClientMessage cm = new ClientMessage();
-        cm.setType(ClientMessage.Type.START);
+        cm.setType(ClientMessage.Type.INVITATION);
         cm.setUserId(this.userId);
         this.writer.write(JsonUtility.toJson(cm) + "\n");
         this.writer.flush();
@@ -527,6 +527,7 @@ public class ClientConsole extends JFrame {
                                         btnPass.setEnabled(true);
                                         btnEndGame.setEnabled(true);
                                         break;
+                                    case HIGHLIGHT:
                                     case VOTING:
                                         gameTable.setEnabled(false);
                                         btnInvite.setEnabled(false);
@@ -570,8 +571,6 @@ public class ClientConsole extends JFrame {
                                     }
                                 }
                             }
-
-
 
                         } catch (InterruptedException e) {
                             //TODO handle blocking

@@ -41,13 +41,15 @@ public class ClientConnection extends Thread {
             gc1.setIdleUsers(new String[] { "Zoe"});
             gc1.setInvitedUser(new String[] {"Hugh", "AKB69"});
             gc1.setCurrentUser("Hugh");
-            action.put(ClientMessage.Type.INVITATION, gc);
+            action.put(ClientMessage.Type.INVITATION, gc1);
 
             GameContext gc2 = new GameContext();
-            gc2.setGameStatus(GameContext.GameStatus.GAMING);
+            gc2.setGameStatus(GameContext.GameStatus.HIGHLIGHT);
             gc2.setInvitedUser(null);
             gc2.setIdleUsers(new String[] {"Zoe"});
             gc2.setGamingUsers(new String[] {"Hugh", "AKB69"});
+            gc2.setCellX(10);
+            gc2.setCellX(6);
             String[][] gameBoard = new String[20][20];
             HashMap<String,Integer> scores = new HashMap<>();
             Random r = new Random();
@@ -112,9 +114,6 @@ public class ClientConnection extends Thread {
                 writer.write(JsonUtility.toJson(sm) + "\n");
                 writer.flush();
             }
-
-
-
             // TODO timing to disconnect
             clientSocket.close();
         } catch (Exception e) {
