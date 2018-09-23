@@ -12,11 +12,13 @@ import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.*;
-import java.net.Socket;
-import java.util.Date;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.*;
+import java.net.Socket;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Map;
 
 
 /**
@@ -31,6 +33,8 @@ public class ClientConsole extends JFrame {
     private Socket socket;
     private BufferedWriter writer;
     private ClientContext context;
+    private String userId;
+    private GameContext gameContext;
 
 
     public static void main(String[] args) {
@@ -68,16 +72,16 @@ public class ClientConsole extends JFrame {
     public ClientConsole(String url, Integer port, String username) throws IOException {
 
         this.plainBoard = createGameBoardModel();
-
         this.socket = new Socket(url, port);
         this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
         this.context = new ClientContext();
         ContextListener listener = new ContextListener(new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8")), this.context);
 
+        this.userId = username;
         // pass username to server
         ClientMessage cm = new ClientMessage();
         cm.setType(ClientMessage.Type.SYNC);
-        cm.setUserId(username);
+        cm.setUserId(this.userId);
         this.writer.write(JsonUtility.toJson(cm) + "\n");
         this.writer.flush();
 
@@ -300,11 +304,10 @@ public class ClientConsole extends JFrame {
 
         btnInvite.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if(idlePlayerList.isSelectionEmpty()) {
+                if (idlePlayerList.isSelectionEmpty()) {
                     lblMessageArea.setText(Dictionary.MORE_THAN_ONE_PLAYER);
                     lblMessageArea.setForeground(Color.RED);
-                }
-                else {
+                } else {
                     // ClientMessage setting
                     String[] selectedIdlePlayers = idlePlayerList.getSelectedValuesList().stream().toArray(String[]::new);
                     for (String item : selectedIdlePlayers) {
@@ -316,7 +319,7 @@ public class ClientConsole extends JFrame {
                     cm.setInvitations(selectedIdlePlayers);
 
                     try {
-                        writer.write(JsonUtility.toJson(cm)+"\n");
+                        writer.write(JsonUtility.toJson(cm) + "\n");
                         writer.flush();
                     } catch (IOException e1) {
                         lblMessageArea.setText(e1.getMessage());
@@ -334,7 +337,7 @@ public class ClientConsole extends JFrame {
                 cm.setType(ClientMessage.Type.START);
                 cm.setUserId(username);
                 try {
-                    writer.write(JsonUtility.toJson(cm)+"\n");
+                    writer.write(JsonUtility.toJson(cm) + "\n");
                     writer.flush();
                 } catch (IOException e1) {
                     lblMessageArea.setText(e1.getMessage());
@@ -351,7 +354,7 @@ public class ClientConsole extends JFrame {
                 cm.setType(ClientMessage.Type.PASS);
                 cm.setUserId(username);
                 try {
-                    writer.write(JsonUtility.toJson(cm)+"\n");
+                    writer.write(JsonUtility.toJson(cm) + "\n");
                     writer.flush();
                 } catch (IOException e1) {
                     lblMessageArea.setText(e1.getMessage());
@@ -368,7 +371,7 @@ public class ClientConsole extends JFrame {
                 cm.setType(ClientMessage.Type.END);
                 cm.setUserId(username);
                 try {
-                    writer.write(JsonUtility.toJson(cm)+"\n");
+                    writer.write(JsonUtility.toJson(cm) + "\n");
                     writer.flush();
                 } catch (IOException e1) {
                     lblMessageArea.setText(e1.getMessage());
@@ -379,8 +382,7 @@ public class ClientConsole extends JFrame {
         });
 
         gameTable.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent me) {
+            @Override public void mouseClicked(MouseEvent me) {
                 int x = gameTable.rowAtPoint(me.getPoint());
                 int y = gameTable.columnAtPoint(me.getPoint());
                 System.out.println(x + "," + y);
@@ -390,30 +392,30 @@ public class ClientConsole extends JFrame {
                 if (!cellValue.trim().isEmpty()) {
                     lblMessageArea.setText(Dictionary.CHS_EMPTY_GRID);
                     lblMessageArea.setForeground(Color.RED);
-                }else{
+                } else {
                     // Components setting
                     lblMessageArea.setText("");
                     lblMessageArea.setForeground(Color.BLACK);
 
                     // display 'Choose Character' dialog
                     Object[] options = new Object[26];
-                    for (int i = 0; i < 26; i++){
-                        options[i] = (char)((int)'A' + i);
+                    for (int i = 0; i < 26; i++) {
+                        options[i] = (char) ((int) 'A' + i);
                     }
-                    int selectedBotton = JOptionPane.showOptionDialog(null,Dictionary.CHS_CHAR,Dictionary.CHS_CHAR_TITLE,
-                            JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]
-                    );
+                    int selectedBotton = JOptionPane
+                        .showOptionDialog(null, Dictionary.CHS_CHAR, Dictionary.CHS_CHAR_TITLE, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options,
+                            options[0]);
 
                     // Choose a character
                     if (selectedBotton != -1) {
-                        char inputChar = (char)((int)'A' + selectedBotton);
+                        char inputChar = (char) ((int) 'A' + selectedBotton);
                         gameTable.getModel().setValueAt(inputChar, x, y);
                         // ClientMessage setting
                         ClientMessage cm = new ClientMessage();
                         cm.setType(ClientMessage.Type.CHARACTER);
                         cm.setUserId(username);
                         try {
-                            writer.write(JsonUtility.toJson(cm)+"\n");
+                            writer.write(JsonUtility.toJson(cm) + "\n");
                             writer.flush();
                         } catch (IOException e1) {
                             lblMessageArea.setText(e1.getMessage());
@@ -435,46 +437,80 @@ public class ClientConsole extends JFrame {
                             ServerMessage headMessage = context.take();
                             Date newVersion = new Date(headMessage.getTime());
                             ServerMessage.Type type = headMessage.getType();
-                            if (ServerMessage.Type.REQUEST.equals(type)) {
-                                Date expiredTime = new Date(headMessage.getExpiredTime());
-                                if (expiredTime.after(new Date())) {
-                                    JOptionPane.showConfirmDialog(null, headMessage.getMessage() + "?");
-                                }
-                            }
+                            switch (type) {
+                                case INFORMATION:
+                                    //update pane
+                                    if (context.getCurrentVersion().before(newVersion) && null != headMessage.getGameContext()) {
+                                        gameContext = headMessage.getGameContext();
+                                        GameContext.GameStatus status = gameContext.getGameStatus();
+                                        switch (status) {
+                                            case IDLING:
+                                                gameTable.setModel(new DefaultTableModel(plainBoard, gameColumnNames));
+                                                gameTable.setEnabled(false);
+                                                listModel.clear();
 
-                            if (context.getCurrentVersion().before(newVersion) && null != headMessage.getGameContext()) {
-                                //TODO update pane
-                                GameContext gameContext = headMessage.getGameContext();
-                                GameContext.GameStatus status = gameContext.getGameStatus();
+                                                java.util.List<String> invitedUsers = Arrays.asList(gameContext.getInvitedUser());
+                                                for (String user : gameContext.getIdleUsers()) {
+                                                    listModel.addElement(invitedUsers.contains(user) ? user + " (invited)" : user);
+                                                }
+                                                idlePlayerList.setModel(listModel);
 
-                                switch (status) {
-                                    case IDLING:
-                                        gameTable.setModel(new DefaultTableModel(plainBoard, gameColumnNames));
-                                        gameTable.setEnabled(false);
-                                        listModel.clear();
-                                        for(String user:gameContext.getIdleUsers()){
-                                            listModel.addElement(user);
+                                                for (String user : gameContext.getIdleUsers()) {
+                                                    listModel.addElement(user);
+                                                }
+                                                playerTable.setModel(new DefaultTableModel(new Object[][] {}, plColumnNames));
+
+                                                btnStartGame.setEnabled(true);
+                                                btnPass.setEnabled(false);
+                                                btnEndGame.setEnabled(false);
+                                                break;
+                                            case GAMING:
+                                                String currentPlayer = gameContext.getCurrentUser();
+                                                gameTable.setModel(new DefaultTableModel(gameContext.getGameBoard(), gameColumnNames));
+                                                java.util.List<String> players = Arrays.asList(gameContext.getGamingUsers());
+                                                if (players.contains(userId) && userId.equals(currentPlayer)) {
+                                                    //TODO probably highlighting
+                                                    gameTable.setEnabled(true);
+                                                } else {
+                                                    gameTable.setEnabled(false);
+                                                }
+
+                                                for (String user : gameContext.getIdleUsers()) {
+                                                    listModel.addElement(user);
+                                                }
+                                                Object[][] playerModole = new Object[gameContext.getScores().size()][3];
+                                                int index = 0;
+                                                for (Map.Entry<String, Integer> player : gameContext.getScores().entrySet()) {
+                                                    playerModole[index][0] = player.getKey();
+                                                    playerModole[index][1] = player.getKey().equals(currentPlayer) ? "playing" : "";
+                                                    playerModole[index][2] = player.getValue();
+
+                                                }
+                                                playerTable.setModel(new DefaultTableModel(playerModole, plColumnNames));
+                                                btnStartGame.setEnabled(false);
+                                                btnPass.setEnabled(true);
+                                                btnEndGame.setEnabled(true);
+                                                break;
+                                            case INVITING:
+                                                break;
+                                            case VOTING:
+                                                break;
+                                            default:
+                                                throw new IllegalArgumentException("Game status miss match");
+
                                         }
-
-                                        DefaultTableModel dm = new DefaultTableModel(new Object[][]{}, plColumnNames);
-                                        playerTable.setModel(dm);
-                                        idlePlayerList.setModel(listModel);
-                                        btnStartGame.setEnabled(false);
-                                        btnPass.setEnabled(false);
-                                        btnEndGame.setEnabled(false);
-                                        break;
-                                    case GAMING:
-                                        break;
-                                    case INVITING:
-                                        break;
-                                    case VOTING:
-                                        break;
-                                    default:
-                                        throw new IllegalArgumentException("Game status miss match");
-
-                                }
-                                context.setCurrentVersion(newVersion);
+                                        context.setCurrentVersion(newVersion);
+                                    }
+                                    break;
+                                case REQUEST:
+                                    // require response
+                                    Date expiredTime = new Date(headMessage.getExpiredTime());
+                                    if (expiredTime.after(new Date())) {
+                                        JOptionPane.showConfirmDialog(null, headMessage.getMessage() + "?");
+                                    }
+                                    break;
                             }
+
                         } catch (InterruptedException e) {
                             //TODO handle blocking
                             e.printStackTrace();
