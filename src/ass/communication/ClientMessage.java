@@ -8,6 +8,8 @@ public class ClientMessage {
 
     private String[] invitations;
 
+    private Boolean response;
+
     private Integer cellX;
 
     private Integer cellY;
@@ -43,6 +45,14 @@ public class ClientMessage {
         this.invitations = invitations;
     }
 
+    public Boolean getResponse() {
+        return response;
+    }
+
+    public void setResponse(Boolean response) {
+        this.response = response;
+    }
+
     public Integer getCellX() {
         return cellX;
     }
@@ -76,7 +86,7 @@ public class ClientMessage {
     }
 
     public enum Type {
-        SYNC, INVITATION, START, CHARACTER, HIGHLIGHT, PASS, END
+        SYNC, INVITATION, INVITATION_CONFIRM, START, CHARACTER, HIGHLIGHT, PASS, END
     }
 
 }
