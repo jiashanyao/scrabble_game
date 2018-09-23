@@ -18,9 +18,7 @@ public class ServerMessage {
 
     private Long expiredTime;
 
-    public ServerMessage(GameContext gameContext) {
-        this.gameContext = gameContext;
-
+    public ServerMessage() {
         Date now = new Date();
         this.time = now.getTime();
 
