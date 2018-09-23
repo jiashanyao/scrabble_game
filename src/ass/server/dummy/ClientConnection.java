@@ -53,7 +53,7 @@ public class ClientConnection extends Thread {
             Random r = new Random();
             for (int i = 0; i < 20; i++) {
                 for (int j = 0; j < 20; j++) {
-                    gameBoard[i][j] = new Integer(r.nextInt((90 - 65) + 1) + 65).toString();
+                    gameBoard[i][j] = String.valueOf((char)(r.nextInt((90 - 65) + 1) + 65));
                 }
             }
 
@@ -97,7 +97,7 @@ public class ClientConnection extends Thread {
         try {
             String clientMsg = null;
 
-            // waiting for incoming request from client
+//             waiting for incoming request from client
             while ((clientMsg = reader.readLine()) != null) {
                 System.out.print("In coming request:");
                 System.out.println(clientMsg);
@@ -112,6 +112,9 @@ public class ClientConnection extends Thread {
                 writer.write(JsonUtility.toJson(sm) + "\n");
                 writer.flush();
             }
+
+
+
             // TODO timing to disconnect
             clientSocket.close();
         } catch (Exception e) {

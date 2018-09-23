@@ -24,15 +24,22 @@ import java.util.*;
  */
 public class ClientConsole extends JFrame {
 
-    static final Integer BOARD_SIZE = 20;
+    public static final Integer BOARD_SIZE = 20;
 
     private static final Map<GameContext.GameStatus, ClientMessage.Type> RESPONSE_MAP;
+
+    private static final DefaultTableCellRenderer GAME_CELL_RENDER;;
+
 
     static {
         Map<GameContext.GameStatus, ClientMessage.Type> map = new HashMap<>();
         map.put(GameContext.GameStatus.INVITING, ClientMessage.Type.INVITATION);
         map.put(GameContext.GameStatus.HIGHLIGHT, ClientMessage.Type.HIGHLIGHT);
         RESPONSE_MAP = Collections.unmodifiableMap(map);
+
+        GAME_CELL_RENDER = new DefaultTableCellRenderer();
+        GAME_CELL_RENDER.setHorizontalAlignment(SwingConstants.CENTER);
+
     }
 
     private String[][] plainBoard;
@@ -67,6 +74,14 @@ public class ClientConsole extends JFrame {
 
     }
 
+    public static void setTableRender(JTable gameTable){
+        for (int i = 0; i < gameTable.getColumnCount(); i++) {
+            gameTable.getColumnModel().getColumn(i).setCellRenderer(GAME_CELL_RENDER);
+            gameTable.getColumnModel().getColumn(i).setMinWidth(30);
+            gameTable.getColumnModel().getColumn(i).setMaxWidth(30);
+        }
+    }
+
     private static String[][] createGameBoardModel() {
         String[][] gameboard = new String[BOARD_SIZE][BOARD_SIZE];
         for (int i = 0; i < BOARD_SIZE; i++) {
@@ -88,7 +103,7 @@ public class ClientConsole extends JFrame {
         this.userId = username;
         // pass username to server
         ClientMessage cm = new ClientMessage();
-        cm.setType(ClientMessage.Type.SYNC);
+        cm.setType(ClientMessage.Type.START);
         cm.setUserId(this.userId);
         this.writer.write(JsonUtility.toJson(cm) + "\n");
         this.writer.flush();
@@ -445,11 +460,12 @@ public class ClientConsole extends JFrame {
                             ServerMessage headMessage = context.take();
                             Date newVersion = new Date(headMessage.getTime());
                             ServerMessage.Type type = headMessage.getType();
-                            String currentPlayer = gameContext.getCurrentUser();
+
 
                             //update pane
                             if (context.getCurrentVersion().before(newVersion) && null != headMessage.getGameContext()) {
                                 gameContext = headMessage.getGameContext();
+                                String currentPlayer = gameContext.getCurrentUser();
                                 //update game board
                                 GameContext.GameStatus status = gameContext.getGameStatus();
                                 if (null != gameContext.getGameBoard()) {
@@ -457,6 +473,8 @@ public class ClientConsole extends JFrame {
                                 } else {
                                     gameTable.setModel(new DefaultTableModel(plainBoard, gameColumnNames));
                                 }
+
+                                setTableRender(gameTable);
 
                                 //update idle users
                                 listModel.clear();
@@ -475,6 +493,7 @@ public class ClientConsole extends JFrame {
                                         playerModel[index][0] = player.getKey();
                                         playerModel[index][1] = player.getKey().equals(currentPlayer) ? "playing" : "";
                                         playerModel[index][2] = player.getValue();
+                                        index++;
                                     }
                                 } else {
                                     playerModel = new Object[][] {};
