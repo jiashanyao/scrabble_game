@@ -1,5 +1,7 @@
 package ass.client;
 
+import ass.client.highlight.HighlightListener;
+import ass.client.highlight.HighlightRender;
 import ass.communication.ClientMessage;
 import ass.communication.GameContext;
 import ass.communication.JsonUtility;
@@ -10,7 +12,10 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.*;
 import java.net.Socket;
 import java.util.*;
@@ -23,14 +28,15 @@ public class ClientConsole extends JFrame {
 
     public static final Integer BOARD_SIZE = 20;
 
-    private static final Map<GameContext.GameStatus, ClientMessage.Type> RESPONSE_MAP;
+    public static final Map<GameContext.GameStatus, ClientMessage.Type> RESPONSE_MAP;
 
-    private static final DefaultTableCellRenderer GAME_CELL_RENDER;
+    public static final DefaultTableCellRenderer GAME_CELL_RENDER;
 
     static {
         Map<GameContext.GameStatus, ClientMessage.Type> map = new HashMap<>();
         map.put(GameContext.GameStatus.INVITING, ClientMessage.Type.INVITATION_CONFIRM);
         map.put(GameContext.GameStatus.HIGHLIGHT, ClientMessage.Type.HIGHLIGHT);
+        map.put(GameContext.GameStatus.VOTING, ClientMessage.Type.VOTE);
         RESPONSE_MAP = Collections.unmodifiableMap(map);
 
         GAME_CELL_RENDER = new DefaultTableCellRenderer();
@@ -41,6 +47,7 @@ public class ClientConsole extends JFrame {
     private String[][] plainBoard;
     private JTable playerTable;
     private JTable gameTable;
+    private HighlightListener highlightListener;
     private Socket socket;
     private BufferedWriter writer;
     private ClientContext context;
@@ -454,10 +461,10 @@ public class ClientConsole extends JFrame {
 
                     if (x == char_row || y == char_col) {
                         if (x == char_row) {
-                            highlighRangeCols = getHighlightRange(char_row, char_col, 0);
+                            highlighRangeCols = HighlightRender.getHighlightRange(gameTable, char_row, char_col, 0);
                         }
                         if (y == char_col) {
-                            highlighRangeRols = getHighlightRange(char_row, char_col, 1);
+                            highlighRangeRols = HighlightRender.getHighlightRange(gameTable, char_row, char_col, 1);
                         }
 
                         highlighStr = getHighlightString(highlighRangeCols, highlighRangeRols, char_row, char_col);
@@ -476,6 +483,9 @@ public class ClientConsole extends JFrame {
                             lblMessageArea.setText(e1.getMessage());
                             lblMessageArea.setForeground(Color.RED);
                             e1.printStackTrace();
+                        } finally {
+                            //remove motion listener
+                            gameTable.removeMouseMotionListener(highlightListener);
                         }
                     }
                 }
@@ -493,7 +503,6 @@ public class ClientConsole extends JFrame {
                             ServerMessage headMessage = context.take();
                             Date newVersion = new Date(headMessage.getTime());
                             ServerMessage.Type type = headMessage.getType();
-
                             //update pane
                             if (context.getCurrentVersion().before(newVersion) && null != headMessage.getGameContext()) {
                                 gameContext = headMessage.getGameContext();
@@ -577,6 +586,7 @@ public class ClientConsole extends JFrame {
 
                             // require response
                             if (ServerMessage.Type.REQUEST.equals(type)) {
+
                                 Date expiredTime = new Date(headMessage.getExpiredTime());
                                 if (expiredTime.after(new Date())) {
                                     try {
@@ -585,19 +595,31 @@ public class ClientConsole extends JFrame {
                                         ClientMessage clientMessage = new ClientMessage();
                                         clientMessage.setUserId(userId);
                                         clientMessage.setType(responseType);
-                                        int dialogResult = JOptionPane.showConfirmDialog(null, headMessage.getMessage() + "?");
+                                        int dialogResult = JOptionPane.showConfirmDialog(null, headMessage.getMessage());
+
                                         if (JOptionPane.YES_OPTION == dialogResult) {
-                                            if (GameContext.GameStatus.HIGHLIGHT.equals(status)) {
-                                                //TODO call zoe Methodga
-                                                clientMessage.setHighLight(new String[] {"", ""});
+                                            switch (status) {
+                                                case HIGHLIGHT:
+                                                    highlightListener = new HighlightListener(gameTable, gameContext.getCellX(), gameContext.getCellY());
+                                                    gameTable.addMouseMotionListener(highlightListener);
+                                                    break;
+                                                case INVITING:
+                                                case VOTING:
+                                                    clientMessage.setResponse(true);
+                                                    writer.write(JsonUtility.toJson(clientMessage) + "\n");
+                                                    writer.flush();
+                                                    break;
+                                                default:
+                                                    JOptionPane.showMessageDialog(null, "Unexpected action...");
+                                                    break;
                                             }
-                                            clientMessage.setResponse(true);
                                         } else {
                                             clientMessage.setResponse(false);
+                                            writer.write(JsonUtility.toJson(clientMessage) + "\n");
+                                            writer.flush();
                                         }
 
-                                        writer.write(JsonUtility.toJson(clientMessage) + "\n");
-                                        writer.flush();
+
                                     } catch (IOException e) {
                                         //TODO handle
                                         e.printStackTrace();
@@ -612,9 +634,6 @@ public class ClientConsole extends JFrame {
                             e.printStackTrace();
                         }
                     }
-
-
-
                 }
             }
 
@@ -645,153 +664,4 @@ public class ClientConsole extends JFrame {
         return result;
     }
 
-    /**
-     * get the highlight range according to character position
-     *
-     * @param char_row
-     * @param char_col
-     * @param type     (0: same row, 1: same column)
-     * @return start and coordinate
-     */
-    private int[] getHighlightRange(int char_row, int char_col, int type) {
-        int[] result = new int[2];
-        //Same row
-        if (type == 0) {
-            for (int i = char_col; i >= 0; i--) {
-                if (gameTable.getModel().getValueAt(char_row, i).toString().isEmpty()) {
-                    result[0] = i + 1;
-                    break;
-                } else if (i == 0) {
-                    result[0] = i;
-                }
-            }
-            for (int j = char_col; j < BOARD_SIZE; j++) {
-                if (gameTable.getModel().getValueAt(char_row, j).toString().isEmpty()) {
-                    result[1] = j - 1;
-                    break;
-                } else if (j == BOARD_SIZE - 1) {
-                    result[1] = j;
-                }
-            }
-        } else if (type == 1) {
-            //Same column
-            for (int i = char_row; i >= 0; i--) {
-                if (gameTable.getModel().getValueAt(i, char_col).toString().isEmpty()) {
-                    result[0] = i + 1;
-                    break;
-                } else if (i == 0) {
-                    result[0] = i;
-                }
-            }
-            for (int j = char_row; j < BOARD_SIZE; j++) {
-                if (gameTable.getModel().getValueAt(j, char_col).toString().isEmpty()) {
-                    result[1] = j - 1;
-                    break;
-                } else if (j == BOARD_SIZE - 1) {
-                    result[1] = j;
-                }
-            }
-        }
-        return result;
-    }
-
-    private class HighlightListener extends MouseMotionAdapter {
-        int mouse_row;
-        int mouse_col;
-        int char_row = 1;
-        int char_col = 3;
-        HighlightRender hr_cross = new HighlightRender(char_row, char_col, 0);
-        HighlightRender hr_row = new HighlightRender(char_row, char_col, 1);
-        HighlightRender hr_col = new HighlightRender(char_col, char_col, 2);
-
-        @Override public void mouseMoved(MouseEvent me) {
-            mouse_row = gameTable.rowAtPoint(me.getPoint());
-            mouse_col = gameTable.columnAtPoint(me.getPoint());
-            if (mouse_row == char_row && mouse_col == char_col) {
-                for (int i = 0; i < gameTable.getColumnCount(); i++) {
-                    gameTable.getColumnModel().getColumn(i).setCellRenderer(hr_cross);
-                }
-
-            } else if (mouse_row == char_row) {
-                for (int i = 0; i < gameTable.getColumnCount(); i++) {
-                    gameTable.getColumnModel().getColumn(i).setCellRenderer(hr_row);
-                }
-
-            } else if (mouse_col == char_col) {
-                for (int i = 0; i < gameTable.getColumnCount(); i++) {
-                    gameTable.getColumnModel().getColumn(i).setCellRenderer(hr_col);
-                }
-
-            } else {
-                for (int i = 0; i < gameTable.getColumnCount(); i++) {
-                    gameTable.getColumnModel().getColumn(i).setCellRenderer(GAME_CELL_RENDER);
-
-                }
-            }
-            gameTable.repaint();
-
-        }
-    }
-
-
-    private class HighlightRender extends DefaultTableCellRenderer {
-        private int char_row;
-        private int char_col;
-        private int type;
-
-        /**
-         * set highlight color in specific area(according to type)
-         *
-         * @param char_row
-         * @param char_col
-         * @param type     0:cross, 1: same row, 2: same column
-         */
-        HighlightRender(int char_row, int char_col, int type) {
-            this.char_row = char_row;
-            this.char_col = char_col;
-            this.type = type;
-        }
-
-        @Override public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
-            int char_row = gameContext.getCellX();
-            int char_col = gameContext.getCellY();
-            int[] highlightRange_cols = null;
-            int[] highlightRange_rows = null;
-            highlightRange_cols = getHighlightRange(char_row, char_col, 0);
-            highlightRange_rows = getHighlightRange(char_row, char_col, 1);
-
-
-            //Cells are by default rendered as a JLabel.
-            JLabel l = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
-            // cross
-            if (type == 0) {
-                if (row == this.char_row && col >= highlightRange_cols[0] && col <= highlightRange_cols[1]) {
-                    l.setBackground(Color.GREEN);
-                } else if (col == this.char_col && row >= highlightRange_rows[0] && row <= highlightRange_rows[1]) {
-                    l.setBackground(Color.GREEN);
-                } else {
-                    l.setBackground(new Color(255, 255, 204));
-                }
-            }
-            // same row
-            else if (type == 1) {
-                if (row == this.char_row && col >= highlightRange_cols[0] && col <= highlightRange_cols[1]) {
-                    l.setBackground(Color.GREEN);
-                } else {
-                    l.setBackground(new Color(255, 255, 204));
-                }
-            }// same column
-            else if (type == 2) {
-                if (col == this.char_col && row >= highlightRange_rows[0] && row <= highlightRange_rows[1]) {
-                    l.setBackground(Color.GREEN);
-                } else {
-                    l.setBackground(new Color(255, 255, 204));
-                }
-            }
-
-            l.setHorizontalAlignment(SwingConstants.CENTER);
-
-            return l;
-        }
-    }
 }
