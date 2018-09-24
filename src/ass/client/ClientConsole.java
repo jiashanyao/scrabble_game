@@ -9,16 +9,11 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
-
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.io.*;
 import java.net.Socket;
 import java.util.*;
-import java.awt.event.MouseMotionAdapter;
 
 
 /**
@@ -31,7 +26,7 @@ public class ClientConsole extends JFrame {
     private static final Map<GameContext.GameStatus, ClientMessage.Type> RESPONSE_MAP;
 
     private static final DefaultTableCellRenderer GAME_CELL_RENDER;
-    
+
     static {
         Map<GameContext.GameStatus, ClientMessage.Type> map = new HashMap<>();
         map.put(GameContext.GameStatus.INVITING, ClientMessage.Type.INVITATION_CONFIRM);
@@ -50,7 +45,7 @@ public class ClientConsole extends JFrame {
     private BufferedWriter writer;
     private ClientContext context;
     private String userId;
-    private GameContext gameContext;    
+    private GameContext gameContext;
 
     public static void main(String[] args) {
         EventQueue.invokeLater(new Runnable() {
@@ -74,7 +69,7 @@ public class ClientConsole extends JFrame {
 
     }
 
-    public static void setTableRender(JTable gameTable){
+    public static void setTableRender(JTable gameTable) {
         for (int i = 0; i < gameTable.getColumnCount(); i++) {
             gameTable.getColumnModel().getColumn(i).setCellRenderer(GAME_CELL_RENDER);
             gameTable.getColumnModel().getColumn(i).setMinWidth(30);
@@ -99,7 +94,7 @@ public class ClientConsole extends JFrame {
         this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
         this.context = new ClientContext();
         ContextListener listener = new ContextListener(new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8")), this.context);
-        
+
         this.userId = username;
         // pass username to server
         ClientMessage cm = new ClientMessage();
@@ -395,8 +390,8 @@ public class ClientConsole extends JFrame {
 
         gameTable.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent me) {
-            	// when gameTable is enable, pop-up choose character dialog
-            	if(gameTable.isEnabled()) {
+                // when gameTable is enable, pop-up choose character dialog
+                if (gameTable.isEnabled()) {
                     int x = gameTable.rowAtPoint(me.getPoint());
                     int y = gameTable.columnAtPoint(me.getPoint());
                     System.out.println(x + "," + y);
@@ -414,7 +409,7 @@ public class ClientConsole extends JFrame {
                         // display 'Choose Character' dialog
                         Object[] options = new Object[26];
                         for (int i = 0; i < 26; i++) {
-                            options[i] = (char) ((int) 'A' + i);
+                            options[i] = (char) (65 + i);
                         }
                         int selectedBotton = JOptionPane
                             .showOptionDialog(null, Dictionary.CHS_CHAR, Dictionary.CHS_CHAR_TITLE, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options,
@@ -422,7 +417,7 @@ public class ClientConsole extends JFrame {
 
                         // Choose a character
                         if (selectedBotton != -1) {
-                            char inputChar = (char) ((int) 'A' + selectedBotton);
+                            String inputChar = (char) (65 + selectedBotton) + "";
                             gameTable.getModel().setValueAt(inputChar, x, y);
                             // ClientMessage setting
                             ClientMessage cm = new ClientMessage();
@@ -441,35 +436,34 @@ public class ClientConsole extends JFrame {
                             }
                         }
                     }
-                } else if(GameContext.GameStatus.HIGHLIGHT.equals(gameContext.getGameStatus()) 
-                		&& username.equals(gameContext.getCurrentUser())) {
-                	//if gameTable is disable and the game status is highlight, click highlight box send message
+                } else if (GameContext.GameStatus.HIGHLIGHT.equals(gameContext.getGameStatus()) && username.equals(gameContext.getCurrentUser())) {
+                    //if gameTable is disable and the game status is highlight, click highlight box send message
 
-                	//Components setting
-                	lblMessageArea.setText("");
+                    //Components setting
+                    lblMessageArea.setText("");
                     lblMessageArea.setForeground(Color.BLACK);
-                	
+
                     // information preparation
-                	int char_row = gameContext.getCellX();
-                	int char_col = gameContext.getCellY();
-                	int x = gameTable.rowAtPoint(me.getPoint());
+                    int char_row = gameContext.getCellX();
+                    int char_col = gameContext.getCellY();
+                    int x = gameTable.rowAtPoint(me.getPoint());
                     int y = gameTable.columnAtPoint(me.getPoint());
                     int[] highlighRangeCols = null;
                     int[] highlighRangeRols = null;
                     String[] highlighStr = null;
-                    
-                	if (x == char_row || y == char_col) {
-                		if (x == char_row) {
-                    		highlighRangeCols = getHighlightRange(char_row, char_col, 0);
-                		}
-                		if (y == char_col) {
-                			highlighRangeRols = getHighlightRange(char_row, char_col, 1);
-                		}
-                		 
-                		highlighStr = getHighlightString(highlighRangeCols, highlighRangeRols, char_row, char_col);
-                	
-                		// ClientMessage setting
-                    	ClientMessage cm = new ClientMessage();
+
+                    if (x == char_row || y == char_col) {
+                        if (x == char_row) {
+                            highlighRangeCols = getHighlightRange(char_row, char_col, 0);
+                        }
+                        if (y == char_col) {
+                            highlighRangeRols = getHighlightRange(char_row, char_col, 1);
+                        }
+
+                        highlighStr = getHighlightString(highlighRangeCols, highlighRangeRols, char_row, char_col);
+
+                        // ClientMessage setting
+                        ClientMessage cm = new ClientMessage();
                         cm.setType(ClientMessage.Type.HIGHLIGHT);
                         cm.setUserId(username);
                         cm.setCellX(char_row);
@@ -483,9 +477,9 @@ public class ClientConsole extends JFrame {
                             lblMessageArea.setForeground(Color.RED);
                             e1.printStackTrace();
                         }
-                	}
+                    }
                 }
-        	} 
+            }
 
         });
 
@@ -595,10 +589,10 @@ public class ClientConsole extends JFrame {
                                         if (JOptionPane.YES_OPTION == dialogResult) {
                                             if (GameContext.GameStatus.HIGHLIGHT.equals(status)) {
                                                 //TODO call zoe Methodga
-                                                clientMessage.setHighLight(new String[]{"",""});
+                                                clientMessage.setHighLight(new String[] {"", ""});
                                             }
                                             clientMessage.setResponse(true);
-                                        }else {
+                                        } else {
                                             clientMessage.setResponse(false);
                                         }
 
@@ -627,180 +621,177 @@ public class ClientConsole extends JFrame {
         };
         backgroundThread.start();
     }
-    
-    private String[] getHighlightString(int[]rangeOfCol ,int[] rangeOfRow, int char_row, int char_col) {
-    	String[] result = new String[2];
-    	
-    	// same row
-    	if(rangeOfCol !=null) {
-    		String rowStr = "";
-    		for(int i = rangeOfCol[0]; i<=rangeOfCol[1]; i++) {
-    			rowStr = rowStr + (String) gameTable.getModel().getValueAt(char_row, i);
-    		}
-    		result[0] = rowStr;
-    	} 
-    	// same column
-    	if(rangeOfRow !=null) {
-    		String colStr = "";
-    		for(int i = rangeOfRow[0]; i<=rangeOfRow[1]; i++) {			
-    			colStr = colStr + (String) gameTable.getModel().getValueAt(i, char_col);
-    		}
-    		result[1] = colStr;
-    	}
-    	
-    	return result;
+
+    private String[] getHighlightString(int[] rangeOfCol, int[] rangeOfRow, int char_row, int char_col) {
+        String[] result = new String[2];
+
+        // same row
+        if (rangeOfCol != null) {
+            String rowStr = "";
+            for (int i = rangeOfCol[0]; i <= rangeOfCol[1]; i++) {
+                rowStr = rowStr + (String) gameTable.getModel().getValueAt(char_row, i);
+            }
+            result[0] = rowStr;
+        }
+        // same column
+        if (rangeOfRow != null) {
+            String colStr = "";
+            for (int i = rangeOfRow[0]; i <= rangeOfRow[1]; i++) {
+                colStr = colStr + (String) gameTable.getModel().getValueAt(i, char_col);
+            }
+            result[1] = colStr;
+        }
+
+        return result;
     }
-    
+
     /**
      * get the highlight range according to character position
+     *
      * @param char_row
      * @param char_col
-     * @param type (0: same row, 1: same column)
+     * @param type     (0: same row, 1: same column)
      * @return start and coordinate
      */
     private int[] getHighlightRange(int char_row, int char_col, int type) {
-    	int[] result = new int[2];
-		//Same row
-    	if(type == 0) {
-    		for(int i = char_col; i>=0; i--) {
-    			if(gameTable.getModel().getValueAt(char_row, i).toString().isEmpty()) {
-    				result[0] = i + 1;
-    				break;
-    			} else if(i == 0) {
-    				result[0] = i;
-    			}
-    		}
-    		for(int j = char_col; j < BOARD_SIZE; j++) {
-    			if(gameTable.getModel().getValueAt(char_row, j).toString().isEmpty()) {
-    				result[1] = j - 1;
-    				break;
-    			} else if(j == BOARD_SIZE - 1) {
-    				result[1] = j;
-    			}
-    		}
-    	} else if(type == 1) {
-    		//Same column
-    		for(int i = char_row; i>=0; i--) {
-    			if(gameTable.getModel().getValueAt(i, char_col).toString().isEmpty()) {
-    				result[0] = i + 1;
-    				break;
-    			} else if(i == 0) {
-    				result[0] = i;
-    			}
-    		}
-    		for(int j = char_row; j < BOARD_SIZE; j++) {
-    			if(gameTable.getModel().getValueAt(j, char_col).toString().isEmpty()) {
-    				result[1] = j - 1;
-    				break;
-    			} else if(j == BOARD_SIZE - 1) {
-    				result[1] = j;
-    			}
-    		}
-    	}
-    	return result;
+        int[] result = new int[2];
+        //Same row
+        if (type == 0) {
+            for (int i = char_col; i >= 0; i--) {
+                if (gameTable.getModel().getValueAt(char_row, i).toString().isEmpty()) {
+                    result[0] = i + 1;
+                    break;
+                } else if (i == 0) {
+                    result[0] = i;
+                }
+            }
+            for (int j = char_col; j < BOARD_SIZE; j++) {
+                if (gameTable.getModel().getValueAt(char_row, j).toString().isEmpty()) {
+                    result[1] = j - 1;
+                    break;
+                } else if (j == BOARD_SIZE - 1) {
+                    result[1] = j;
+                }
+            }
+        } else if (type == 1) {
+            //Same column
+            for (int i = char_row; i >= 0; i--) {
+                if (gameTable.getModel().getValueAt(i, char_col).toString().isEmpty()) {
+                    result[0] = i + 1;
+                    break;
+                } else if (i == 0) {
+                    result[0] = i;
+                }
+            }
+            for (int j = char_row; j < BOARD_SIZE; j++) {
+                if (gameTable.getModel().getValueAt(j, char_col).toString().isEmpty()) {
+                    result[1] = j - 1;
+                    break;
+                } else if (j == BOARD_SIZE - 1) {
+                    result[1] = j;
+                }
+            }
+        }
+        return result;
     }
-    
+
     private class HighlightListener extends MouseMotionAdapter {
-    	int mouse_row;
-    	int mouse_col;
+        int mouse_row;
+        int mouse_col;
         int char_row = 1;
         int char_col = 3;
-	    HighlightRender hr_cross = new HighlightRender(char_row, char_col, 0);
-	    HighlightRender hr_row = new HighlightRender(char_row, char_col, 1);
-	    HighlightRender hr_col = new HighlightRender(char_col, char_col, 2);
+        HighlightRender hr_cross = new HighlightRender(char_row, char_col, 0);
+        HighlightRender hr_row = new HighlightRender(char_row, char_col, 1);
+        HighlightRender hr_col = new HighlightRender(char_col, char_col, 2);
 
-    	@Override
-    	public void mouseMoved(MouseEvent me) {
-    		mouse_row = gameTable.rowAtPoint(me.getPoint());
-    		mouse_col = gameTable.columnAtPoint(me.getPoint());
-    		if(mouse_row==char_row && mouse_col==char_col) {
-    			for (int i = 0; i < gameTable.getColumnCount(); i++) {
-        	         gameTable.getColumnModel().getColumn(i).setCellRenderer(hr_cross);
-    			}
+        @Override public void mouseMoved(MouseEvent me) {
+            mouse_row = gameTable.rowAtPoint(me.getPoint());
+            mouse_col = gameTable.columnAtPoint(me.getPoint());
+            if (mouse_row == char_row && mouse_col == char_col) {
+                for (int i = 0; i < gameTable.getColumnCount(); i++) {
+                    gameTable.getColumnModel().getColumn(i).setCellRenderer(hr_cross);
+                }
 
-      		} else if (mouse_row==char_row) {
-    			for (int i = 0; i < gameTable.getColumnCount(); i++) {
-    				gameTable.getColumnModel().getColumn(i).setCellRenderer(hr_row);
-    			}
+            } else if (mouse_row == char_row) {
+                for (int i = 0; i < gameTable.getColumnCount(); i++) {
+                    gameTable.getColumnModel().getColumn(i).setCellRenderer(hr_row);
+                }
 
-      		} else if (mouse_col==char_col) {
-    			for (int i = 0; i < gameTable.getColumnCount(); i++) {
-          	         gameTable.getColumnModel().getColumn(i).setCellRenderer(hr_col);
-          	         }
+            } else if (mouse_col == char_col) {
+                for (int i = 0; i < gameTable.getColumnCount(); i++) {
+                    gameTable.getColumnModel().getColumn(i).setCellRenderer(hr_col);
+                }
 
-    		} else {
-    			for (int i = 0; i < gameTable.getColumnCount(); i++) {
-        	         gameTable.getColumnModel().getColumn(i).setCellRenderer(GAME_CELL_RENDER);
+            } else {
+                for (int i = 0; i < gameTable.getColumnCount(); i++) {
+                    gameTable.getColumnModel().getColumn(i).setCellRenderer(GAME_CELL_RENDER);
 
-    			}
-    		}
-          	gameTable.repaint();
+                }
+            }
+            gameTable.repaint();
 
-    	}
+        }
     }
-    
-    private class HighlightRender extends DefaultTableCellRenderer {
-    	private int char_row;
-    	private int char_col;
-		private int type;
-    	
-		/**
-		 * set highlight color in specific area(according to type)
-		 * @param char_row
-		 * @param char_col
-		 * @param type 0:cross, 1: same row, 2: same column
-		 */
-    	HighlightRender(int char_row, int char_col, int type){
-    		this.char_row = char_row;
-    		this.char_col = char_col;
-    		this.type = type;
-    	}
-    	
-    	@Override
-    	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
-    		int char_row = gameContext.getCellX();
-    		int char_col = gameContext.getCellY();
-    		int[] highlightRange_cols = null;
-    		int[] highlightRange_rows = null;
-    		highlightRange_cols = getHighlightRange(char_row, char_col, 0);
-    		highlightRange_rows = getHighlightRange(char_row, char_col, 1);
-    		
-    				
-    	    //Cells are by default rendered as a JLabel.
-    	    JLabel l = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
-    	    // cross
-    	    if (type == 0) {
-    	    	if(row == this.char_row && col >= highlightRange_cols[0] && col <=highlightRange_cols[1]) {
-        	    	l.setBackground(Color.GREEN);
-        	    } 
-    	    	else if (col ==  this.char_col && row >= highlightRange_rows[0] && row <=highlightRange_rows[1]) {
-        	    	l.setBackground(Color.GREEN);
-        	    }
-    	    	else {
-        	    	l.setBackground(new Color(255, 255, 204));
-        	    }
-    	    }
-    	    // same row
-    	    else if (type == 1) {
-    	    	if(row == this.char_row && col >= highlightRange_cols[0] && col <=highlightRange_cols[1]) {
-        	    	l.setBackground(Color.GREEN);
-        	    } 
-    	    	else {
-        	    	l.setBackground(new Color(255, 255, 204));
-        	    }
-    	    }// same column
-    	    else if (type == 2) {
-    	    	if (col ==  this.char_col && row >= highlightRange_rows[0] && row <=highlightRange_rows[1]) {
-        	    	l.setBackground(Color.GREEN);
-        	    }
-    	    	else {
-        	    	l.setBackground(new Color(255, 255, 204));
-        	    }
-    	    }
-    	    
-    	    l.setHorizontalAlignment(SwingConstants.CENTER);
 
-    	  return l;
-    	}
+
+    private class HighlightRender extends DefaultTableCellRenderer {
+        private int char_row;
+        private int char_col;
+        private int type;
+
+        /**
+         * set highlight color in specific area(according to type)
+         *
+         * @param char_row
+         * @param char_col
+         * @param type     0:cross, 1: same row, 2: same column
+         */
+        HighlightRender(int char_row, int char_col, int type) {
+            this.char_row = char_row;
+            this.char_col = char_col;
+            this.type = type;
+        }
+
+        @Override public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
+            int char_row = gameContext.getCellX();
+            int char_col = gameContext.getCellY();
+            int[] highlightRange_cols = null;
+            int[] highlightRange_rows = null;
+            highlightRange_cols = getHighlightRange(char_row, char_col, 0);
+            highlightRange_rows = getHighlightRange(char_row, char_col, 1);
+
+
+            //Cells are by default rendered as a JLabel.
+            JLabel l = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
+            // cross
+            if (type == 0) {
+                if (row == this.char_row && col >= highlightRange_cols[0] && col <= highlightRange_cols[1]) {
+                    l.setBackground(Color.GREEN);
+                } else if (col == this.char_col && row >= highlightRange_rows[0] && row <= highlightRange_rows[1]) {
+                    l.setBackground(Color.GREEN);
+                } else {
+                    l.setBackground(new Color(255, 255, 204));
+                }
+            }
+            // same row
+            else if (type == 1) {
+                if (row == this.char_row && col >= highlightRange_cols[0] && col <= highlightRange_cols[1]) {
+                    l.setBackground(Color.GREEN);
+                } else {
+                    l.setBackground(new Color(255, 255, 204));
+                }
+            }// same column
+            else if (type == 2) {
+                if (col == this.char_col && row >= highlightRange_rows[0] && row <= highlightRange_rows[1]) {
+                    l.setBackground(Color.GREEN);
+                } else {
+                    l.setBackground(new Color(255, 255, 204));
+                }
+            }
+
+            l.setHorizontalAlignment(SwingConstants.CENTER);
+
+            return l;
+        }
     }
 }
