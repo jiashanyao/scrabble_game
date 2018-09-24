@@ -6,11 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import ass.communication.ClientMessage;
-import ass.communication.GameContext;
 import ass.communication.JsonUtility;
 import ass.communication.ServerMessage;
 
@@ -20,60 +16,94 @@ public class ClientConnection extends Thread{
 
 	private Server server;
 
+	private Game game;
+	
 	private String clientId;
+	
+	private BufferedReader reader;
+	
+	private BufferedWriter writer;
 	
 	public ClientConnection(Socket socket, Server server) {
 		clientSocket = socket;
 		this.server = server;
-	}
-	
-	@Override
-	public void run() {
+		game = null;
 		try {
-			BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), "UTF-8"));
-			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream(), "UTF-8"));
-			String input = null;
-			while ((input = reader.readLine()) != null) {
-				ClientMessage clientMessage = JsonUtility.fromJson(input, ClientMessage.class);
-				ServerMessage serverMessage = processRequest(clientMessage);
-				String output = JsonUtility.toJson(serverMessage);
-				writer.write(output);
-				writer.newLine();
-				writer.flush();
-			}
-			clientSocket.close();
-			System.out.println(
-					"Client " + clientSocket.getInetAddress().getHostAddress() + ": Connection closed.");
+			reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), "UTF-8"));
+			writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream(), "UTF-8"));
 		} catch (IOException e) {
 			System.out.println(
 					"Client " + clientSocket.getInetAddress().getHostAddress() + ": Connection interrupted!");
 		}
 	}
+	
+	@Override
+	public void run() {
+		Thread read = new Thread() { // thread for reading requests
+			@Override
+			public void run() {
+				String input = null;
+				try {
+					while ((input = reader.readLine()) != null) {
+						ClientMessage clientMessage = JsonUtility.fromJson(input, ClientMessage.class);
+						processRequest(clientMessage);
+						//TODO make a message queue
+					}
+				} catch (IOException e) {
+					System.out.println(
+							"Client " + clientSocket.getInetAddress().getHostAddress() + ": Connection interrupted!");
+				}
+			}
+		};
+		read.start();
+	}
 
-	private ServerMessage processRequest(ClientMessage cm) {
+	private void processRequest(ClientMessage cm) {
 		ServerMessage sm = new ServerMessage();
 		switch(cm.getType()) {
 		case SYNC:
-			List<String> clientIds = server.getClients().stream().map(ClientConnection::getClientId).collect(Collectors.toList());
-			if (clientIds.contains(cm.getUserId())){
+			if (server.getClients().containsKey(cm.getUserId())){
 				sm.setType(ServerMessage.Type.REQUEST);
 				sm.setMessage(Dictionary.ID_DUP);
 			} else {
-				server.getClients().add(this);
+				clientId = cm.getUserId();
+				server.getClients().put(clientId, this);
 				sm.setType(ServerMessage.Type.INFORMATION);
 				sm.setMessage(Dictionary.ID_OK);
 			}
+			break;
+		case INVITATION:
+			game = new Game(this);
+			String[] invitedUsers = cm.getInvitations();
+			for (String user : invitedUsers) {
+				ClientConnection cc = server.getClients().get(user);
+				game.addPlayer(cc);
+			}
+			
 		default:
 		}
-		return sm;
+		
 	}
-
+	
 	public String getClientId() {
 		return clientId;
 	}
 
-	public void setClientId(String clientId) {
-		this.clientId = clientId;
+	public void invitedBy(String host) {
+		ServerMessage sm = new ServerMessage();
+		sm.setType(ServerMessage.Type.REQUEST);
+		sm.setMessage(host + " invites you to join a game.\n yes or no?");
+		String message = JsonUtility.toJson(sm);
+		write(message);
 	}
 	
+	private void write(String message) {
+		try {
+			writer.write(message);
+			writer.flush();
+		} catch (IOException e) {
+			System.out.println(
+					"Client " + clientSocket.getInetAddress().getHostAddress() + ": Connection interrupted!");
+		}
+	}
 }

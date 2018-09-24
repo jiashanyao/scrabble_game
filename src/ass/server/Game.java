@@ -1,8 +1,7 @@
 package ass.server;
 
-import java.util.List;
-
-import ass.communication.GameContext;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Game logic
@@ -11,15 +10,29 @@ import ass.communication.GameContext;
  */
 public class Game {
 
-	private List<ClientConnection> players;
+	private String host;
 	
-	private List<ClientConnection> idleUsers;
+	private Map<String, ClientConnection> players;
 	
-	private GameContext gameContext;
-	
-	public Game() {
-		
+	private State state;
+
+	public Game(ClientConnection host) {
+		this.host = host.getClientId();
+		players = new ConcurrentHashMap<>();
+		players.put(this.host, host);
+		state = State.INVITING;
 	}
 	
+	public boolean addPlayer(ClientConnection clientConnection) {
+		if (clientConnection != null) {
+			players.put(clientConnection.getClientId(), clientConnection);
+			clientConnection.invitedBy(host);
+			return true;
+		}
+		return false;
+	}
 	
+	public enum State{
+		INVITING, GAMING
+	}
 }

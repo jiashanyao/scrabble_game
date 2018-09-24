@@ -3,10 +3,8 @@ package ass.server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-
-import ass.communication.GameContext;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Type port number in command line input to start server.
@@ -17,21 +15,18 @@ public class Server {
 	
 	public static final int PORT_POS = 0;
 	
-	public static final int MAX_CLIENTS = 4;	// default
+	public static final int MAX_CLIENTS = 4;
 	
 	private int port;
 	
 	private ServerSocket serverSocket;
 	
-	private GameContext gameContext;
-	
-	private List<ClientConnection> clients;
+	private Map<String, ClientConnection> clients;
 
 	public Server(String[] args) {
 		parseArgs(args);
 		serverSocket = null;
-		setGameContext(null);
-		clients = new ArrayList<>();
+		clients = new ConcurrentHashMap<>();
 	}
 	
     static public void main(String[] args){
@@ -67,9 +62,8 @@ public class Server {
 					try {
 						Socket clientSocket = serverSocket.accept();
 						System.out.println("Serving a client at " + clientSocket.getInetAddress().getHostAddress());
-						ClientConnection newClient = new ClientConnection(clientSocket, theServer);
 						if (clients.size() < MAX_CLIENTS) {
-							newClient.start();
+							new ClientConnection(clientSocket, theServer).start();
 						}
 					} catch (IOException e) {
 						break;
@@ -88,19 +82,7 @@ public class Server {
 		return true;
 	}
 
-	public GameContext getGameContext() {
-		return gameContext;
-	}
-
-	public void setGameContext(GameContext gameContext) {
-		this.gameContext = gameContext;
-	}
-	
-	public List<ClientConnection> getClients() {
+	public Map<String, ClientConnection> getClients() {
 		return clients;
-	}
-	
-	public void setClients(List<ClientConnection> clients) {
-		this.clients = clients;
 	}
 }
