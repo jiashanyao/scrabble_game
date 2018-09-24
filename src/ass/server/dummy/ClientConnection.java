@@ -4,7 +4,6 @@ import ass.communication.ClientMessage;
 import ass.communication.GameContext;
 import ass.communication.JsonUtility;
 import ass.communication.ServerMessage;
-import org.apache.commons.beanutils.BeanUtils;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -30,35 +29,27 @@ public class ClientConnection extends Thread {
             writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream(), "UTF-8"));
             action = new HashMap<>();
             // init GameContext
-            GameContext gc = new GameContext();
-            gc.setGameStatus(GameContext.GameStatus.IDLING);
-            gc.setIdleUsers(new String[] {"Hugh", "Zoe", "AKB69"});
-
-            action.put(ClientMessage.Type.SYNC, gc);
-
-            GameContext gc1 = new GameContext();
-            gc1.setGameStatus(GameContext.GameStatus.INVITING);
-            gc1.setIdleUsers(new String[] { "Zoe"});
-            gc1.setInvitedUser(new String[] {"Hugh", "AKB69"});
-            gc1.setCurrentUser("Hugh");
-            action.put(ClientMessage.Type.INVITATION, gc1);
-
             GameContext gc2 = new GameContext();
-            gc2.setGameStatus(GameContext.GameStatus.HIGHLIGHT);
+            gc2.setCurrentUser("Hugh");
+            gc2.setGameStatus(GameContext.GameStatus.GAMING);
             gc2.setInvitedUser(null);
-            gc2.setIdleUsers(new String[] {"Zoe"});
+            gc2.setIdleUsers(new String[] {"Zoe", "Hugh", "AKB69"});
             gc2.setGamingUsers(new String[] {"Hugh", "AKB69"});
             gc2.setCellX(10);
             gc2.setCellX(6);
             String[][] gameBoard = new String[20][20];
-            HashMap<String,Integer> scores = new HashMap<>();
+            HashMap<String, Integer> scores = new HashMap<>();
             Random r = new Random();
             for (int i = 0; i < 20; i++) {
                 for (int j = 0; j < 20; j++) {
-                    gameBoard[i][j] = String.valueOf((char)(r.nextInt((90 - 65) + 1) + 65));
+                    if (i == 5 && j > 2 && j < 15) {
+                        gameBoard[i][j] = String.valueOf((char) (r.nextInt((90 - 65) + 1) + 65));
+                    } else if (j == 10 && i > 2 && i < 15) {
+                        gameBoard[i][j] = String.valueOf((char) (r.nextInt((90 - 65) + 1) + 65));
+                    }
                 }
             }
-
+            gameBoard[5][10] = "";
             scores.put("Hugh", 94);
             scores.put("AKB69", 87);
 
@@ -66,29 +57,6 @@ public class ClientConnection extends Thread {
             gc2.setScores(scores);
             action.put(ClientMessage.Type.START, gc2);
 
-            GameContext gc3 = new GameContext();
-            gc3.setGameStatus(GameContext.GameStatus.GAMING);
-            gc3.setInvitedUser(null);
-            gc3.setIdleUsers(new String[] {"Zoe"});
-            gc3.setGamingUsers(new String[] {"Hugh", "AKB69"});
-            gc3.setCurrentUser("AKB69");
-            gameBoard[0][0] = "0";
-            gameBoard[19][19] = "0";
-            gc3.setGameBoard(gameBoard);
-            gc3.setScores(scores);
-            action.put(ClientMessage.Type.PASS, gc3);
-
-            GameContext gc4 = new GameContext();
-            gc4.setGameStatus(GameContext.GameStatus.GAMING);
-            gc4.setInvitedUser(null);
-            gc4.setIdleUsers(new String[] {"Zoe"});
-            gc4.setGamingUsers(new String[] {"Hugh", "AKB69"});
-            gc4.setCurrentUser("Hugh");
-            gc4.setGameBoard(gameBoard);
-            gc4.setScores(scores);
-            action.put(ClientMessage.Type.HIGHLIGHT, gc4);
-
-            action.put(ClientMessage.Type.END, gc1);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -99,16 +67,30 @@ public class ClientConnection extends Thread {
         try {
             String clientMsg = null;
 
-//             waiting for incoming request from client
+            //             waiting for incoming request from client
             while ((clientMsg = reader.readLine()) != null) {
                 System.out.print("In coming request:");
                 System.out.println(clientMsg);
                 ClientMessage clientMessage = JsonUtility.fromJson(clientMsg, ClientMessage.class);
                 ClientMessage.Type type = clientMessage.getType();
                 ServerMessage sm = new ServerMessage(new GameContext());
-                sm.setType(ServerMessage.Type.INFORMATION);
-                sm.setGameContext(action.get(type));
-                sm.setTime(new Date().getTime());
+
+                if(type.equals(ClientMessage.Type.CHARACTER)){
+                    GameContext c = action.get(ClientMessage.Type.START);
+                    c.getGameBoard()[clientMessage.getCellX()][clientMessage.getCellY()]=clientMessage.getCellChar();
+                    c.setGameStatus(GameContext.GameStatus.HIGHLIGHT);
+                    sm.setType(ServerMessage.Type.REQUEST);
+                    c.setCellX(clientMessage.getCellX());
+                    c.setCellY(clientMessage.getCellY());
+                    sm.setGameContext(c);
+                }else if(type.equals(ClientMessage.Type.START)){
+                    GameContext c = action.get(ClientMessage.Type.START);
+                    c.getGameBoard()[5][10]="";
+                    sm.setGameContext(action.get(ClientMessage.Type.START));
+                    sm.setType(ServerMessage.Type.INFORMATION);
+                    sm.setGameContext(c);
+
+                }
 
                 // response to client
                 writer.write(JsonUtility.toJson(sm) + "\n");

@@ -105,7 +105,7 @@ public class ClientConsole extends JFrame {
         this.userId = username;
         // pass username to server
         ClientMessage cm = new ClientMessage();
-        cm.setType(ClientMessage.Type.INVITATION);
+        cm.setType(ClientMessage.Type.START);
         cm.setUserId(this.userId);
         this.writer.write(JsonUtility.toJson(cm) + "\n");
         this.writer.flush();
@@ -485,7 +485,7 @@ public class ClientConsole extends JFrame {
                             e1.printStackTrace();
                         } finally {
                             //remove motion listener
-                            gameTable.removeMouseMotionListener(highlightListener);
+                            highlightListener.turnOff();
                         }
                     }
                 }

@@ -1,6 +1,7 @@
 package ass.client.highlight;
 
 import ass.client.ClientConsole;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -76,9 +77,11 @@ public class HighlightRender extends DefaultTableCellRenderer {
     public static int[] getHighlightRange(JTable gameTable, int char_row, int char_col, int type) {
         int[] result = new int[2];
         //Same row
+
         if (type == 0) {
             for (int i = char_col; i >= 0; i--) {
-                if (gameTable.getModel().getValueAt(char_row, i).toString().isEmpty()) {
+                Object value = gameTable.getModel().getValueAt(char_row, i);
+                if (null == value || StringUtils.isBlank(value.toString())) {
                     result[0] = i + 1;
                     break;
                 } else if (i == 0) {
@@ -86,7 +89,8 @@ public class HighlightRender extends DefaultTableCellRenderer {
                 }
             }
             for (int j = char_col; j < ClientConsole.BOARD_SIZE; j++) {
-                if (gameTable.getModel().getValueAt(char_row, j).toString().isEmpty()) {
+                Object value = gameTable.getModel().getValueAt(char_row, j);
+                if (null == value || StringUtils.isBlank(value.toString())) {
                     result[1] = j - 1;
                     break;
                 } else if (j == ClientConsole.BOARD_SIZE - 1) {
@@ -96,7 +100,8 @@ public class HighlightRender extends DefaultTableCellRenderer {
         } else if (type == 1) {
             //Same column
             for (int i = char_row; i >= 0; i--) {
-                if (gameTable.getModel().getValueAt(i, char_col).toString().isEmpty()) {
+                Object value = gameTable.getModel().getValueAt(i, char_col);
+                if (null == value || StringUtils.isBlank(value.toString())) {
                     result[0] = i + 1;
                     break;
                 } else if (i == 0) {
@@ -104,7 +109,8 @@ public class HighlightRender extends DefaultTableCellRenderer {
                 }
             }
             for (int j = char_row; j < ClientConsole.BOARD_SIZE; j++) {
-                if (gameTable.getModel().getValueAt(j, char_col).toString().isEmpty()) {
+                Object value = gameTable.getModel().getValueAt(j, char_col);
+                if (null == value || StringUtils.isBlank(value.toString())) {
                     result[1] = j - 1;
                     break;
                 } else if (j == ClientConsole.BOARD_SIZE - 1) {
