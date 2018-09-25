@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+
 import ass.communication.ClientMessage;
 import ass.communication.GameContext;
 import ass.communication.JsonUtility;
@@ -19,6 +20,10 @@ public class ClientConnection extends Thread{
 
 	private GameContext gameContext;
 	
+	private String userId;
+	
+	private ClientState clientState;
+	
 	private BufferedReader reader;
 	
 	private BufferedWriter writer;
@@ -27,6 +32,8 @@ public class ClientConnection extends Thread{
 		clientSocket = socket;
 		this.server = server;
 		gameContext = null;
+		userId = null;
+		clientState = null;
 		try {
 			reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), "UTF-8"));
 			writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream(), "UTF-8"));
@@ -52,7 +59,9 @@ public class ClientConnection extends Thread{
 								sm.setType(ServerMessage.Type.REQUEST);
 								sm.setMessage(Dictionary.ID_DUP);
 							} else {
-								server.getClients().put(cm.getUserId(), thisClientConnection);
+								userId = cm.getUserId();
+								clientState = ClientState.IDLE;
+								server.getClients().put(userId, thisClientConnection);
 								sm.setType(ServerMessage.Type.INFORMATION);
 								sm.setMessage(Dictionary.ID_OK);
 							}
@@ -98,5 +107,25 @@ public class ClientConnection extends Thread{
 
 	public void setGameContext(GameContext gameContext) {
 		this.gameContext = gameContext;
+	}
+
+	public String getUserId() {
+		return userId;
+	}
+
+	public void setUserId(String userId) {
+		this.userId = userId;
+	}
+	
+	public ClientState getClientState() {
+		return clientState;
+	}
+
+	public void setClientState(ClientState clientState) {
+		this.clientState = clientState;
+	}
+
+	public enum ClientState{
+		IDLE, INVITING, INVITED, GAMING
 	}
 }

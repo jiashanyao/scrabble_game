@@ -1,6 +1,7 @@
 package ass.server;
 
 import ass.communication.ClientMessage;
+import ass.communication.ClientMessage.Type;
 import ass.communication.JsonUtility;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -43,11 +44,21 @@ public class DummyClient {
 				userId = scanner.nextLine();
 				cm.setUserId(userId);
 			}
-			if (output.equals("invite")) {	// invite all users
-				String[] invited = scanner.nextLine().split("/s");
+			if (output.equals("invite")) {
+				String[] invited = scanner.nextLine().split("\\s");
 				cm.setUserId(userId);
 				cm.setInvitations(invited);
 				cm.setType(ClientMessage.Type.INVITATION);
+			}
+			if (output.equals("yes")) {
+				cm.setType(Type.INVITATION_CONFIRM);
+				cm.setUserId(userId);
+				cm.setResponse(true);
+			}
+			if (output.equals("no")) {
+				cm.setType(Type.INVITATION_CONFIRM);
+				cm.setUserId(userId);
+				cm.setResponse(false);
 			}
 			json = JsonUtility.toJson(cm);
 			try {
