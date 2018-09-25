@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import ass.communication.ClientMessage;
+import ass.communication.GameContext;
 import ass.communication.JsonUtility;
 import ass.communication.ServerMessage;
 
@@ -16,9 +17,7 @@ public class ClientConnection extends Thread{
 
 	private Server server;
 
-	private Game game;
-	
-	private String clientId;
+	private GameContext gameContext;
 	
 	private BufferedReader reader;
 	
@@ -27,7 +26,7 @@ public class ClientConnection extends Thread{
 	public ClientConnection(Socket socket, Server server) {
 		clientSocket = socket;
 		this.server = server;
-		game = null;
+		gameContext = null;
 		try {
 			reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), "UTF-8"));
 			writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream(), "UTF-8"));
@@ -39,71 +38,65 @@ public class ClientConnection extends Thread{
 	
 	@Override
 	public void run() {
+		ClientConnection thisClientConnection = this;
 		Thread read = new Thread() { // thread for reading requests
 			@Override
 			public void run() {
 				String input = null;
 				try {
 					while ((input = reader.readLine()) != null) {
-						ClientMessage clientMessage = JsonUtility.fromJson(input, ClientMessage.class);
-						processRequest(clientMessage);
-						//TODO make a message queue
+						ClientMessage cm = JsonUtility.fromJson(input, ClientMessage.class);
+						if (cm.getType() == ClientMessage.Type.SYNC) {
+							ServerMessage sm = new ServerMessage();
+							if (server.getClients().containsKey(cm.getUserId())){
+								sm.setType(ServerMessage.Type.REQUEST);
+								sm.setMessage(Dictionary.ID_DUP);
+							} else {
+								server.getClients().put(cm.getUserId(), thisClientConnection);
+								sm.setType(ServerMessage.Type.INFORMATION);
+								sm.setMessage(Dictionary.ID_OK);
+							}
+							write(sm);
+						} else {
+							server.getMessageQueue().put(cm);
+						}
 					}
 				} catch (IOException e) {
 					System.out.println(
 							"Client " + clientSocket.getInetAddress().getHostAddress() + ": Connection interrupted!");
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 			}
 		};
 		read.start();
 	}
-
-	private void processRequest(ClientMessage cm) {
-		ServerMessage sm = new ServerMessage();
-		switch(cm.getType()) {
-		case SYNC:
-			if (server.getClients().containsKey(cm.getUserId())){
-				sm.setType(ServerMessage.Type.REQUEST);
-				sm.setMessage(Dictionary.ID_DUP);
-			} else {
-				clientId = cm.getUserId();
-				server.getClients().put(clientId, this);
-				sm.setType(ServerMessage.Type.INFORMATION);
-				sm.setMessage(Dictionary.ID_OK);
-			}
-			break;
-		case INVITATION:
-			game = new Game(this);
-			String[] invitedUsers = cm.getInvitations();
-			for (String user : invitedUsers) {
-				ClientConnection cc = server.getClients().get(user);
-				game.addPlayer(cc);
-			}
-			
-		default:
-		}
-		
-	}
 	
-	public String getClientId() {
-		return clientId;
-	}
-
 	public void invitedBy(String host) {
 		ServerMessage sm = new ServerMessage();
 		sm.setType(ServerMessage.Type.REQUEST);
 		sm.setMessage(host + " invites you to join a game.\n yes or no?");
-		String message = JsonUtility.toJson(sm);
-		write(message);
+		write(sm);
 	}
 	
-	private void write(String message) {
+	public void write(ServerMessage serverMessage) {
 		try {
-			writer.write(message);
+			String jsonString = JsonUtility.toJson(serverMessage);
+			writer.write(jsonString);
+			writer.newLine();
 			writer.flush();
 		} catch (IOException e) {
 			System.out.println(
 					"Client " + clientSocket.getInetAddress().getHostAddress() + ": Connection interrupted!");
 		}
+	}
+
+	public GameContext getGameContext() {
+		return gameContext;
+	}
+
+	public void setGameContext(GameContext gameContext) {
+		this.gameContext = gameContext;
 	}
 }

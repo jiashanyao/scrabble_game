@@ -5,9 +5,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import ass.communication.ClientMessage;
 
 /**
- * Type port number in command line input to start server.
+ * Enter port number as command line input to start server.
  */
 public class Server {
 	
@@ -22,11 +25,14 @@ public class Server {
 	private ServerSocket serverSocket;
 	
 	private Map<String, ClientConnection> clients;
+	
+	private LinkedBlockingQueue<ClientMessage> messageQueue;
 
 	public Server(String[] args) {
 		parseArgs(args);
 		serverSocket = null;
 		clients = new ConcurrentHashMap<>();
+		messageQueue = new LinkedBlockingQueue<>();
 	}
 	
     static public void main(String[] args){
@@ -71,6 +77,8 @@ public class Server {
 				}
     		}
     	}.start();
+    	MessageHandling messageHandling = new MessageHandling(this);
+    	messageHandling.start();
     }
     
 	public boolean isNumeric(String s) {
@@ -85,4 +93,9 @@ public class Server {
 	public Map<String, ClientConnection> getClients() {
 		return clients;
 	}
+
+	public LinkedBlockingQueue<ClientMessage> getMessageQueue() {
+		return messageQueue;
+	}
+
 }
