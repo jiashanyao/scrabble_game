@@ -1,5 +1,7 @@
 package ass.client;
 
+import ass.client.highlight.HighlightListener;
+import ass.client.highlight.HighlightRender;
 import ass.communication.ClientMessage;
 import ass.communication.GameContext;
 import ass.communication.JsonUtility;
@@ -16,26 +18,41 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.*;
 import java.net.Socket;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Map;
+import java.util.*;
 
 
 /**
  * Created by hugh on 18/9/18.
  */
 public class ClientConsole extends JFrame {
-    static final Integer BOARD_SIZE = 20;
+
+    public static final Integer BOARD_SIZE = 20;
+
+    public static final Map<GameContext.GameStatus, ClientMessage.Type> RESPONSE_MAP;
+
+    public static final DefaultTableCellRenderer GAME_CELL_RENDER;
+
+    static {
+        Map<GameContext.GameStatus, ClientMessage.Type> map = new HashMap<>();
+        map.put(GameContext.GameStatus.INVITING, ClientMessage.Type.INVITATION_CONFIRM);
+        map.put(GameContext.GameStatus.HIGHLIGHT, ClientMessage.Type.HIGHLIGHT);
+        map.put(GameContext.GameStatus.VOTING, ClientMessage.Type.VOTE);
+        RESPONSE_MAP = Collections.unmodifiableMap(map);
+
+        GAME_CELL_RENDER = new DefaultTableCellRenderer();
+        GAME_CELL_RENDER.setHorizontalAlignment(SwingConstants.CENTER);
+
+    }
 
     private String[][] plainBoard;
     private JTable playerTable;
     private JTable gameTable;
+    private HighlightListener highlightListener;
     private Socket socket;
     private BufferedWriter writer;
     private ClientContext context;
     private String userId;
     private GameContext gameContext;
-
 
     public static void main(String[] args) {
         EventQueue.invokeLater(new Runnable() {
@@ -59,6 +76,14 @@ public class ClientConsole extends JFrame {
 
     }
 
+    public static void setTableRender(JTable gameTable) {
+        for (int i = 0; i < gameTable.getColumnCount(); i++) {
+            gameTable.getColumnModel().getColumn(i).setCellRenderer(GAME_CELL_RENDER);
+            gameTable.getColumnModel().getColumn(i).setMinWidth(30);
+            gameTable.getColumnModel().getColumn(i).setMaxWidth(30);
+        }
+    }
+
     private static String[][] createGameBoardModel() {
         String[][] gameboard = new String[BOARD_SIZE][BOARD_SIZE];
         for (int i = 0; i < BOARD_SIZE; i++) {
@@ -80,7 +105,7 @@ public class ClientConsole extends JFrame {
         this.userId = username;
         // pass username to server
         ClientMessage cm = new ClientMessage();
-        cm.setType(ClientMessage.Type.SYNC);
+        cm.setType(ClientMessage.Type.START);
         cm.setUserId(this.userId);
         this.writer.write(JsonUtility.toJson(cm) + "\n");
         this.writer.flush();
@@ -99,7 +124,7 @@ public class ClientConsole extends JFrame {
         /*
          * Message Area
          */
-        JLabel lblMessageArea = new JLabel("Welcome to Scrbble Game");
+        JLabel lblMessageArea = new JLabel(Dictionary.MSG_WELCOME);
         lblMessageArea.setFont(new Font("SimSun", Font.PLAIN, 18));
         GridBagConstraints gbc_lblMessageArea = new GridBagConstraints();
         gbc_lblMessageArea.gridwidth = 20;
@@ -108,7 +133,6 @@ public class ClientConsole extends JFrame {
         gbc_lblMessageArea.gridx = 1;
         gbc_lblMessageArea.gridy = 1;
         getContentPane().add(lblMessageArea, gbc_lblMessageArea);
-
 
         /*
          * Game Area
@@ -138,8 +162,6 @@ public class ClientConsole extends JFrame {
         for (int i = 0; i < gameTable.getColumnCount(); i++) {
             gameColumModle.getColumn(i).setMaxWidth(30);
             gameColumModle.getColumn(i).setMinWidth(30);
-
-
         }
 
 
@@ -170,7 +192,7 @@ public class ClientConsole extends JFrame {
          * 1) idle player list
          * 2) playing player list
          */
-        JLabel lblIdlePlayers = new JLabel("Idle Players");
+        JLabel lblIdlePlayers = new JLabel(Dictionary.LBL_IDLE_PLY);
         lblIdlePlayers.setHorizontalAlignment(SwingConstants.LEFT);
         lblIdlePlayers.setFont(new Font("SimSun", Font.PLAIN, 18));
         GridBagConstraints gbc_lblIdlePlayers = new GridBagConstraints();
@@ -193,11 +215,7 @@ public class ClientConsole extends JFrame {
         gbc_idelPlayerList.gridy = 2;
         idlePlayerList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-        //TODO: change to get data from response
         DefaultListModel<String> listModel = new DefaultListModel<String>();
-        listModel.addElement("Jane Doe (invited)");
-        listModel.addElement("John Smith (invited)");
-        listModel.addElement("Kathy Green");
         idlePlayerList.setModel(listModel);
 
         JScrollPane listScrollPane = new JScrollPane(idlePlayerList);
@@ -210,7 +228,7 @@ public class ClientConsole extends JFrame {
         gbc_listScrollPane.gridy = 2;
         getContentPane().add(listScrollPane, gbc_listScrollPane);
 
-        JLabel lblPlayingPlayers = new JLabel("Playing Players");
+        JLabel lblPlayingPlayers = new JLabel(Dictionary.LBL_PLY_PLY);
         lblPlayingPlayers.setFont(new Font("SimSun", Font.PLAIN, 18));
         GridBagConstraints gbc_lblPlayingPlayers = new GridBagConstraints();
         gbc_lblPlayingPlayers.gridwidth = 5;
@@ -234,10 +252,7 @@ public class ClientConsole extends JFrame {
 
         String[] plColumnNames = {"User Name", "Status", "Score"};
 
-        //TODO change to listener
-        Object[][] plData =
-            {{"Kathy", "Playing", new Integer(10)}, {"Snowboarding", "", new Integer(5)}, {"John", "", new Integer(4)}, {"Doe", "", new Integer(2)}, {"Joe", "", new Integer(10)}};
-
+        Object[][] plData = null;
         DefaultTableModel dm = new DefaultTableModel(plData, plColumnNames);
         playerTable.setModel(dm);
 
@@ -301,7 +316,6 @@ public class ClientConsole extends JFrame {
         /**
          * Action Listeners
          */
-
         btnInvite.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (idlePlayerList.isSelectionEmpty()) {
@@ -383,37 +397,85 @@ public class ClientConsole extends JFrame {
 
         gameTable.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent me) {
-                int x = gameTable.rowAtPoint(me.getPoint());
-                int y = gameTable.columnAtPoint(me.getPoint());
-                System.out.println(x + "," + y);
-                String cellValue = (String) gameTable.getModel().getValueAt(x, y);
+                // when gameTable is enable, pop-up choose character dialog
+                if (gameTable.isEnabled()) {
+                    int x = gameTable.rowAtPoint(me.getPoint());
+                    int y = gameTable.columnAtPoint(me.getPoint());
+                    System.out.println(x + "," + y);
+                    String cellValue = (String) gameTable.getModel().getValueAt(x, y);
 
-                //TODO: when game_Stauts is playing && userID is currentuser && grid is empty, popup chooseCharcter
-                if (!cellValue.trim().isEmpty()) {
-                    lblMessageArea.setText(Dictionary.CHS_EMPTY_GRID);
-                    lblMessageArea.setForeground(Color.RED);
-                } else {
-                    // Components setting
+                    //TODO: when game_Stauts is playing && userID is currentuser && grid is empty, popup chooseCharcter
+                    if (!cellValue.trim().isEmpty()) {
+                        lblMessageArea.setText(Dictionary.CHS_EMPTY_GRID);
+                        lblMessageArea.setForeground(Color.RED);
+                    } else {
+                        // Components setting
+                        lblMessageArea.setText("");
+                        lblMessageArea.setForeground(Color.BLACK);
+
+                        // display 'Choose Character' dialog
+                        Object[] options = new Object[26];
+                        for (int i = 0; i < 26; i++) {
+                            options[i] = (char) (65 + i);
+                        }
+                        int selectedBotton = JOptionPane
+                            .showOptionDialog(null, Dictionary.CHS_CHAR, Dictionary.CHS_CHAR_TITLE, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options,
+                                options[0]);
+
+                        // Choose a character
+                        if (selectedBotton != -1) {
+                            String inputChar = (char) (65 + selectedBotton) + "";
+                            gameTable.getModel().setValueAt(inputChar, x, y);
+                            // ClientMessage setting
+                            ClientMessage cm = new ClientMessage();
+                            cm.setType(ClientMessage.Type.CHARACTER);
+                            cm.setUserId(username);
+                            cm.setCellChar(inputChar);
+                            cm.setCellX(x);
+                            cm.setCellY(y);
+                            try {
+                                writer.write(JsonUtility.toJson(cm) + "\n");
+                                writer.flush();
+                            } catch (IOException e1) {
+                                lblMessageArea.setText(e1.getMessage());
+                                lblMessageArea.setForeground(Color.RED);
+                                e1.printStackTrace();
+                            }
+                        }
+                    }
+                } else if (GameContext.GameStatus.HIGHLIGHT.equals(gameContext.getGameStatus()) && username.equals(gameContext.getCurrentUser())) {
+                    //if gameTable is disable and the game status is highlight, click highlight box send message
+
+                    //Components setting
                     lblMessageArea.setText("");
                     lblMessageArea.setForeground(Color.BLACK);
 
-                    // display 'Choose Character' dialog
-                    Object[] options = new Object[26];
-                    for (int i = 0; i < 26; i++) {
-                        options[i] = (char) ((int) 'A' + i);
-                    }
-                    int selectedBotton = JOptionPane
-                        .showOptionDialog(null, Dictionary.CHS_CHAR, Dictionary.CHS_CHAR_TITLE, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options,
-                            options[0]);
+                    // information preparation
+                    int char_row = gameContext.getCellX();
+                    int char_col = gameContext.getCellY();
+                    int x = gameTable.rowAtPoint(me.getPoint());
+                    int y = gameTable.columnAtPoint(me.getPoint());
+                    int[] highlighRangeCols = null;
+                    int[] highlighRangeRols = null;
+                    String[] highlighStr = null;
 
-                    // Choose a character
-                    if (selectedBotton != -1) {
-                        char inputChar = (char) ((int) 'A' + selectedBotton);
-                        gameTable.getModel().setValueAt(inputChar, x, y);
+                    if (x == char_row || y == char_col) {
+                        if (x == char_row) {
+                            highlighRangeCols = HighlightRender.getHighlightRange(gameTable, char_row, char_col, 0);
+                        }
+                        if (y == char_col) {
+                            highlighRangeRols = HighlightRender.getHighlightRange(gameTable, char_row, char_col, 1);
+                        }
+
+                        highlighStr = getHighlightString(highlighRangeCols, highlighRangeRols, char_row, char_col);
+
                         // ClientMessage setting
                         ClientMessage cm = new ClientMessage();
-                        cm.setType(ClientMessage.Type.CHARACTER);
+                        cm.setType(ClientMessage.Type.HIGHLIGHT);
                         cm.setUserId(username);
+                        cm.setCellX(char_row);
+                        cm.setCellY(char_col);
+                        cm.setHighLight(highlighStr);
                         try {
                             writer.write(JsonUtility.toJson(cm) + "\n");
                             writer.flush();
@@ -421,10 +483,14 @@ public class ClientConsole extends JFrame {
                             lblMessageArea.setText(e1.getMessage());
                             lblMessageArea.setForeground(Color.RED);
                             e1.printStackTrace();
+                        } finally {
+                            //remove motion listener
+                            highlightListener.turnOff();
                         }
                     }
                 }
             }
+
         });
 
         // start to listen
@@ -437,78 +503,128 @@ public class ClientConsole extends JFrame {
                             ServerMessage headMessage = context.take();
                             Date newVersion = new Date(headMessage.getTime());
                             ServerMessage.Type type = headMessage.getType();
-                            switch (type) {
-                                case INFORMATION:
-                                    //update pane
-                                    if (context.getCurrentVersion().before(newVersion) && null != headMessage.getGameContext()) {
-                                        gameContext = headMessage.getGameContext();
-                                        GameContext.GameStatus status = gameContext.getGameStatus();
-                                        switch (status) {
-                                            case IDLING:
-                                                gameTable.setModel(new DefaultTableModel(plainBoard, gameColumnNames));
-                                                gameTable.setEnabled(false);
-                                                listModel.clear();
+                            //update pane
+                            if (context.getCurrentVersion().before(newVersion) && null != headMessage.getGameContext()) {
+                                gameContext = headMessage.getGameContext();
+                                String currentPlayer = gameContext.getCurrentUser();
+                                //update game board
+                                GameContext.GameStatus status = gameContext.getGameStatus();
+                                if (null != gameContext.getGameBoard()) {
+                                    gameTable.setModel(new DefaultTableModel(gameContext.getGameBoard(), gameColumnNames));
+                                } else {
+                                    gameTable.setModel(new DefaultTableModel(plainBoard, gameColumnNames));
+                                }
 
-                                                java.util.List<String> invitedUsers = Arrays.asList(gameContext.getInvitedUser());
-                                                for (String user : gameContext.getIdleUsers()) {
-                                                    listModel.addElement(invitedUsers.contains(user) ? user + " (invited)" : user);
-                                                }
-                                                idlePlayerList.setModel(listModel);
+                                setTableRender(gameTable);
 
-                                                for (String user : gameContext.getIdleUsers()) {
-                                                    listModel.addElement(user);
-                                                }
-                                                playerTable.setModel(new DefaultTableModel(new Object[][] {}, plColumnNames));
+                                //update idle users
+                                listModel.clear();
+                                java.util.List<String> invitedUsers = null != gameContext.getInvitedUser() ? gameContext.getInvitedUser() : new ArrayList<>();
+                                for (String user : gameContext.getIdleUsers()) {
+                                    listModel.addElement(invitedUsers.contains(user) ? user + " (invited)" : user);
+                                }
+                                idlePlayerList.setModel(listModel);
 
-                                                btnStartGame.setEnabled(true);
-                                                btnPass.setEnabled(false);
-                                                btnEndGame.setEnabled(false);
-                                                break;
-                                            case GAMING:
-                                                String currentPlayer = gameContext.getCurrentUser();
-                                                gameTable.setModel(new DefaultTableModel(gameContext.getGameBoard(), gameColumnNames));
-                                                java.util.List<String> players = Arrays.asList(gameContext.getGamingUsers());
-                                                if (players.contains(userId) && userId.equals(currentPlayer)) {
-                                                    //TODO probably highlighting
-                                                    gameTable.setEnabled(true);
-                                                } else {
-                                                    gameTable.setEnabled(false);
-                                                }
+                                //update players table
+                                Object[][] playerModel = null;
+                                if (null != gameContext.getScores()) {
+                                    int index = 0;
+                                    playerModel = new Object[gameContext.getScores().size()][3];
+                                    for (Map.Entry<String, Integer> player : gameContext.getScores().entrySet()) {
+                                        playerModel[index][0] = player.getKey();
+                                        playerModel[index][1] = player.getKey().equals(currentPlayer) ? "playing" : "";
+                                        playerModel[index][2] = player.getValue();
+                                        index++;
+                                    }
+                                } else {
+                                    playerModel = new Object[][] {};
+                                }
+                                playerTable.setModel(new DefaultTableModel(playerModel, plColumnNames));
 
-                                                for (String user : gameContext.getIdleUsers()) {
-                                                    listModel.addElement(user);
-                                                }
-                                                Object[][] playerModole = new Object[gameContext.getScores().size()][3];
-                                                int index = 0;
-                                                for (Map.Entry<String, Integer> player : gameContext.getScores().entrySet()) {
-                                                    playerModole[index][0] = player.getKey();
-                                                    playerModole[index][1] = player.getKey().equals(currentPlayer) ? "playing" : "";
-                                                    playerModole[index][2] = player.getValue();
-
-                                                }
-                                                playerTable.setModel(new DefaultTableModel(playerModole, plColumnNames));
-                                                btnStartGame.setEnabled(false);
-                                                btnPass.setEnabled(true);
-                                                btnEndGame.setEnabled(true);
-                                                break;
-                                            case INVITING:
-                                                break;
-                                            case VOTING:
-                                                break;
-                                            default:
-                                                throw new IllegalArgumentException("Game status miss match");
-
+                                //update button status
+                                switch (status) {
+                                    case IDLING:
+                                        gameTable.setEnabled(false);
+                                        btnInvite.setEnabled(true);
+                                        btnStartGame.setEnabled(false);
+                                        btnPass.setEnabled(false);
+                                        btnEndGame.setEnabled(false);
+                                        break;
+                                    case INVITING:
+                                        gameTable.setEnabled(false);
+                                        btnInvite.setEnabled(userId.equals(currentPlayer));
+                                        btnStartGame.setEnabled(userId.equals(currentPlayer));
+                                        btnPass.setEnabled(false);
+                                        btnEndGame.setEnabled(false);
+                                        break;
+                                    case GAMING:
+                                        java.util.List<String> players = gameContext.getGamingUsers();
+                                        if (players.contains(userId) && userId.equals(currentPlayer)) {
+                                            gameTable.setEnabled(true);
+                                        } else {
+                                            gameTable.setEnabled(false);
                                         }
-                                        context.setCurrentVersion(newVersion);
+                                        btnInvite.setEnabled(false);
+                                        btnStartGame.setEnabled(false);
+                                        btnPass.setEnabled(true);
+                                        btnEndGame.setEnabled(true);
+                                        break;
+                                    case HIGHLIGHT:
+                                    case VOTING:
+                                        gameTable.setEnabled(false);
+                                        btnInvite.setEnabled(false);
+                                        btnStartGame.setEnabled(false);
+                                        btnPass.setEnabled(true);
+                                        btnEndGame.setEnabled(true);
+                                        break;
+                                    default:
+                                        throw new IllegalArgumentException("Game status miss match");
+
+                                }
+                                context.setCurrentVersion(newVersion);
+                            }
+
+                            // require response
+                            if (ServerMessage.Type.REQUEST.equals(type)) {
+
+                                Date expiredTime = new Date(headMessage.getExpiredTime());
+                                if (expiredTime.after(new Date())) {
+                                    try {
+                                        GameContext.GameStatus status = gameContext.getGameStatus();
+                                        ClientMessage.Type responseType = null == RESPONSE_MAP.get(status) ? ClientMessage.Type.SYNC : RESPONSE_MAP.get(status);
+                                        ClientMessage clientMessage = new ClientMessage();
+                                        clientMessage.setUserId(userId);
+                                        clientMessage.setType(responseType);
+                                        int dialogResult = JOptionPane.showConfirmDialog(null, headMessage.getMessage());
+
+                                        if (JOptionPane.YES_OPTION == dialogResult) {
+                                            switch (status) {
+                                                case HIGHLIGHT:
+                                                    highlightListener = new HighlightListener(gameTable, gameContext.getCellX(), gameContext.getCellY());
+                                                    gameTable.addMouseMotionListener(highlightListener);
+                                                    break;
+                                                case INVITING:
+                                                case VOTING:
+                                                    clientMessage.setResponse(true);
+                                                    writer.write(JsonUtility.toJson(clientMessage) + "\n");
+                                                    writer.flush();
+                                                    break;
+                                                default:
+                                                    JOptionPane.showMessageDialog(null, "Unexpected action...");
+                                                    break;
+                                            }
+                                        } else {
+                                            clientMessage.setResponse(false);
+                                            writer.write(JsonUtility.toJson(clientMessage) + "\n");
+                                            writer.flush();
+                                        }
+
+
+                                    } catch (IOException e) {
+                                        //TODO handle
+                                        e.printStackTrace();
                                     }
-                                    break;
-                                case REQUEST:
-                                    // require response
-                                    Date expiredTime = new Date(headMessage.getExpiredTime());
-                                    if (expiredTime.after(new Date())) {
-                                        JOptionPane.showConfirmDialog(null, headMessage.getMessage() + "?");
-                                    }
-                                    break;
+                                }
                             }
 
                         } catch (InterruptedException e) {
@@ -518,13 +634,34 @@ public class ClientConsole extends JFrame {
                             e.printStackTrace();
                         }
                     }
-
-
-
                 }
             }
 
         };
         backgroundThread.start();
     }
+
+    private String[] getHighlightString(int[] rangeOfCol, int[] rangeOfRow, int char_row, int char_col) {
+        String[] result = new String[2];
+
+        // same row
+        if (rangeOfCol != null) {
+            String rowStr = "";
+            for (int i = rangeOfCol[0]; i <= rangeOfCol[1]; i++) {
+                rowStr = rowStr + (String) gameTable.getModel().getValueAt(char_row, i);
+            }
+            result[0] = rowStr;
+        }
+        // same column
+        if (rangeOfRow != null) {
+            String colStr = "";
+            for (int i = rangeOfRow[0]; i <= rangeOfRow[1]; i++) {
+                colStr = colStr + (String) gameTable.getModel().getValueAt(i, char_col);
+            }
+            result[1] = colStr;
+        }
+
+        return result;
+    }
+
 }

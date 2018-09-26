@@ -12,4 +12,7 @@ public final class Dictionary {
 	public final static String VOTE_CONFIRM = "Do you agree the highlight word?";
 	public final static String INVITE_CONFIRM_TITLE = "Invitaiton Confirm";
 	public final static String INVITE_CONFIRM = "Do you want to join the game?";
+	public final static String MSG_WELCOME = "Welcome to Scrbble Game";
+	public final static String LBL_IDLE_PLY = "Idle Players";
+	public final static String LBL_PLY_PLY = "Playing Players";
 }
