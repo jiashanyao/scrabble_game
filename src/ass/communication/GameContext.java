@@ -1,14 +1,16 @@
 package ass.communication;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class GameContext {
 
-    private String[] idleUsers;
+    private List<String> idleUsers;
 
-    private String[] gamingUsers;
+    private List<String> gamingUsers;
 
-    private String[] invitedUser;
+    private List<String> invitedUser;
 
     private GameStatus gameStatus;
 
@@ -23,31 +25,11 @@ public class GameContext {
     private Map<String, Integer> scores;
 
     public GameContext() {
+    	idleUsers = new ArrayList<>();
+    	gamingUsers = new ArrayList<>();
+    	invitedUser = new ArrayList<>();
     }
 
-    public String[] getIdleUsers() {
-        return idleUsers;
-    }
-
-    public void setIdleUsers(String[] idleUsers) {
-        this.idleUsers = idleUsers;
-    }
-
-    public String[] getGamingUsers() {
-        return gamingUsers;
-    }
-
-    public void setGamingUsers(String[] gamingUsers) {
-        this.gamingUsers = gamingUsers;
-    }
-
-    public String[] getInvitedUser() {
-        return invitedUser;
-    }
-
-    public void setInvitedUser(String[] invitedUser) {
-        this.invitedUser = invitedUser;
-    }
 
     public GameStatus getGameStatus() {
         return gameStatus;
@@ -97,7 +79,33 @@ public class GameContext {
         this.scores = scores;
     }
 
-    public enum GameStatus {
+    public List<String> getIdleUsers() {
+		return idleUsers;
+	}
+
+
+	public void setIdleUsers(List<String> idleUsers) {
+		this.idleUsers = idleUsers;
+	}
+
+	public List<String> getGamingUsers() {
+		return gamingUsers;
+	}
+
+
+	public void setGamingUsers(List<String> gamingUsers) {
+		this.gamingUsers = gamingUsers;
+	}
+
+	public List<String> getInvitedUser() {
+		return invitedUser;
+	}
+
+	public void setInvitedUser(List<String> invitedUser) {
+		this.invitedUser = invitedUser;
+	}
+
+	public enum GameStatus {
         IDLING, INVITING, GAMING, HIGHLIGHT, VOTING
     }
 

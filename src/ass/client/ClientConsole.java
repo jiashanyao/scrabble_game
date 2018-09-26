@@ -519,7 +519,7 @@ public class ClientConsole extends JFrame {
 
                                 //update idle users
                                 listModel.clear();
-                                java.util.List<String> invitedUsers = null != gameContext.getInvitedUser() ? Arrays.asList(gameContext.getInvitedUser()) : new ArrayList<>();
+                                java.util.List<String> invitedUsers = null != gameContext.getInvitedUser() ? gameContext.getInvitedUser() : new ArrayList<>();
                                 for (String user : gameContext.getIdleUsers()) {
                                     listModel.addElement(invitedUsers.contains(user) ? user + " (invited)" : user);
                                 }
@@ -558,7 +558,7 @@ public class ClientConsole extends JFrame {
                                         btnEndGame.setEnabled(false);
                                         break;
                                     case GAMING:
-                                        java.util.List<String> players = Arrays.asList(gameContext.getGamingUsers());
+                                        java.util.List<String> players = gameContext.getGamingUsers();
                                         if (players.contains(userId) && userId.equals(currentPlayer)) {
                                             gameTable.setEnabled(true);
                                         } else {

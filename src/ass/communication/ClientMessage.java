@@ -7,6 +7,8 @@ public class ClientMessage {
     private Type type;
 
     private String[] invitations;
+    
+    private boolean accept;
 
     private Boolean response;
 
@@ -84,6 +86,14 @@ public class ClientMessage {
     public void setHighLight(String[] highLight) {
         this.highLight = highLight;
     }
+
+    public boolean isAccept() {
+		return accept;
+	}
+
+	public void setResponse(boolean response) {
+		this.accept = response;
+	}
 
     public enum Type {
         SYNC, INVITATION, INVITATION_CONFIRM, START, CHARACTER, HIGHLIGHT, VOTE, PASS, END

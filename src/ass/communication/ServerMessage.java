@@ -18,9 +18,7 @@ public class ServerMessage {
 
     private Long expiredTime;
 
-    public ServerMessage(GameContext gameContext) {
-        this.gameContext = gameContext;
-
+    public ServerMessage() {
         Date now = new Date();
         this.time = now.getTime();
 
@@ -30,6 +28,28 @@ public class ServerMessage {
         this.expiredTime = calendar.getTime().getTime();
     }
 
+    public ServerMessage(String message) {
+    	this.message = message;
+        Date now = new Date();
+        this.time = now.getTime();
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(now);
+        calendar.add(Calendar.SECOND, 15);
+        this.expiredTime = calendar.getTime().getTime();
+    }
+    
+    public ServerMessage(GameContext gameContext) {
+    	this.gameContext = gameContext;
+        Date now = new Date();
+        this.time = now.getTime();
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(now);
+        calendar.add(Calendar.SECOND, 15);
+        this.expiredTime = calendar.getTime().getTime();
+    }
+    
     public Type getType() {
         return type;
     }
