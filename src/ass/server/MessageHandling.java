@@ -34,14 +34,19 @@ public class MessageHandling extends Thread {
 			if (client.getClientState() != ClientState.GAMING) {
 				// if inviting client is not gaming, he can invite
 				GameContext gameContext = null;
+				ServerMessage sm = new ServerMessage();
+				sm.setType(Type.INFORMATION);
 				if (client.getClientState() != ClientState.INVITING) {
 					gameContext = new GameContext();
 					gameContext.getGamingUsers().add(client.getUserId());
 					client.setGameContext(gameContext);
 					client.setClientState(ClientState.INVITING);
+					sm.setMessage("You initiated a game and invited someone(s).");
 				} else {
 					gameContext = client.getGameContext();
+					sm.setMessage("You invited someone(s).");
 				}
+				sm.setGameContext(gameContext);
 				String[] invited = cm.getInvitations();
 				for (String user : invited) {
 					ClientConnection cc = server.getClients().get(user);
@@ -57,12 +62,13 @@ public class MessageHandling extends Thread {
 						cc.write(invitation);
 					}
 				}
+				client.write(sm);
 			}
 			break;
 		case INVITATION_CONFIRM:
 			if (client.getClientState() == ClientConnection.ClientState.INVITED && client.getGameContext() != null && cm.isAccept()) {
 				client.getGameContext().getGamingUsers().add(client.getUserId());	// join game of latest invitation
-				client.setClientState(ClientState.INVITING);
+				client.setClientState(ClientState.INVITING);	// after joining, he can invite other users as well
 				ServerMessage sm = new ServerMessage("You are in the game.");
 				sm.setType(Type.INFORMATION);
 				sm.setGameContext(client.getGameContext());

@@ -60,23 +60,29 @@ public class Server {
 			System.exit(1);
 		}
     	Server theServer = this;
-    	new Thread() {	// this thread is for listening to and start client connections
+    	Thread listen = new Thread() {	// this thread is for listening to and start client connections
     		@Override
     		public void run() {
     			System.out.println("Started listening on port " + serverSocket.getLocalPort());
 				while (true) {
 					try {
-						Socket clientSocket = serverSocket.accept();
-						System.out.println("Serving a client at " + clientSocket.getInetAddress().getHostAddress());
-						if (clients.size() < MAX_CLIENTS) {
+						if (clients.size() < MAX_CLIENTS) {		// this guard seems not work!!! Number of clients just increases beyond max!
+							Socket clientSocket = serverSocket.accept();
+							System.out.println("Serving a client at " + clientSocket.getInetAddress().getHostAddress());
 							new ClientConnection(clientSocket, theServer).start();
+						} else {
+							Thread.sleep(5000);		// iterate every 5 seconds when clients are full for lower CPU use
 						}
 					} catch (IOException e) {
 						break;
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
 				}
     		}
-    	}.start();
+    	};
+    	listen.start();
     	MessageHandling messageHandling = new MessageHandling(this);
     	messageHandling.start();
     }

@@ -58,6 +58,9 @@ public class ClientConnection extends Thread{
 							if (server.getClients().containsKey(cm.getUserId())){
 								sm.setType(ServerMessage.Type.REQUEST);
 								sm.setMessage(Dictionary.ID_DUP);
+								//clientSocket.close();		// if username duplicates, socket can close
+								//return;					// and thread can terminate
+								// or request user to enter another username?
 							} else {
 								userId = cm.getUserId();
 								clientState = ClientState.IDLE;
