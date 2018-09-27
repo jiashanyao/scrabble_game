@@ -3,11 +3,14 @@ package ass.server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import ass.communication.ClientMessage;
+import ass.server.ClientConnection.ClientState;
 
 /**
  * Enter port number as command line input to start server.
@@ -31,7 +34,7 @@ public class Server {
 	public Server(String[] args) {
 		parseArgs(args);
 		serverSocket = null;
-		clients = new ConcurrentHashMap<>();
+		clients = new ConcurrentHashMap<>();	// for concurrent access
 		messageQueue = new LinkedBlockingQueue<>();
 	}
 	
@@ -66,7 +69,7 @@ public class Server {
     			System.out.println("Started listening on port " + serverSocket.getLocalPort());
 				while (true) {
 					try {
-						if (clients.size() < MAX_CLIENTS) {		// this guard seems not work!!! Number of clients just increases beyond max!
+						if (clients.size() < MAX_CLIENTS) {		// limit max client number to prevent crash
 							Socket clientSocket = serverSocket.accept();
 							System.out.println("Serving a client at " + clientSocket.getInetAddress().getHostAddress());
 							new ClientConnection(clientSocket, theServer).start();
@@ -102,6 +105,16 @@ public class Server {
 
 	public LinkedBlockingQueue<ClientMessage> getMessageQueue() {
 		return messageQueue;
+	}
+	
+	public List<String> getIdleUsers(){
+		List<String> idleUsers = new ArrayList<>();
+		for (ClientConnection cc : clients.values()) {
+			if (cc.getClientState() == ClientState.IDLE || cc.getClientState() == ClientState.INVITED) {
+				idleUsers.add(cc.getUserId());
+			}
+		}
+		return idleUsers;
 	}
 
 }

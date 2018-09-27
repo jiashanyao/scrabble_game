@@ -67,6 +67,7 @@ public class ClientConnection extends Thread{
 								server.getClients().put(userId, thisClientConnection);
 								sm.setType(ServerMessage.Type.INFORMATION);
 								sm.setMessage(Dictionary.ID_OK);
+								sm.setIdleUsers(server.getIdleUsers());
 							}
 							write(sm);
 						} else {

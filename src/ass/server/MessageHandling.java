@@ -59,9 +59,11 @@ public class MessageHandling extends Thread {
 						ServerMessage invitation = new ServerMessage(
 								client.getUserId() + " invites you to a game. y/n?");
 						invitation.setType(ServerMessage.Type.REQUEST);
+						invitation.setIdleUsers(server.getIdleUsers());
 						cc.write(invitation);
 					}
 				}
+				sm.setIdleUsers(server.getIdleUsers());
 				client.write(sm);
 			}
 			break;
@@ -72,6 +74,7 @@ public class MessageHandling extends Thread {
 				ServerMessage sm = new ServerMessage("You are in the game.");
 				sm.setType(Type.INFORMATION);
 				sm.setGameContext(client.getGameContext());
+				sm.setIdleUsers(server.getIdleUsers());
 				client.write(sm);
 			}
 		case START:
