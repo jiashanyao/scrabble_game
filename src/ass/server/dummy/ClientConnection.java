@@ -34,11 +34,7 @@ public class ClientConnection extends Thread {
             gc2.setCurrentUser("Hugh");
             gc2.setGameStatus(GameContext.GameStatus.GAMING);
             gc2.setInvitedUser(null);
-            ArrayList<String> idleUser = new ArrayList<>();
-            idleUser.add("Zoe");
-            idleUser.add("Hugh");
-            idleUser.add("AKB69");
-            gc2.setIdleUsers(idleUser);
+
             ArrayList<String> gamingUser = new ArrayList<>();
             gamingUser.add("Hugh");
             gamingUser.add("AKB69");
@@ -82,6 +78,11 @@ public class ClientConnection extends Thread {
                 ClientMessage clientMessage = JsonUtility.fromJson(clientMsg, ClientMessage.class);
                 ClientMessage.Type type = clientMessage.getType();
                 ServerMessage sm = new ServerMessage(new GameContext());
+                ArrayList<String> idleUser = new ArrayList<>();
+                idleUser.add("Zoe");
+                idleUser.add("Hugh");
+                idleUser.add("AKB69");
+                sm.setIdleUsers(idleUser);
 
                 if(type.equals(ClientMessage.Type.CHARACTER)){
                     GameContext c = action.get(ClientMessage.Type.START);
