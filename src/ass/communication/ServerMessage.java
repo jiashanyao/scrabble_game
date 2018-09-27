@@ -11,7 +11,7 @@ import java.util.List;
 public class ServerMessage {
 
     private Type type;
-    
+
     private List<String> idleUsers;
 
     private GameContext gameContext;
@@ -34,7 +34,7 @@ public class ServerMessage {
     }
 
     public ServerMessage(String message) {
-    	this.message = message;
+        this.message = message;
         Date now = new Date();
         this.time = now.getTime();
 
@@ -44,9 +44,9 @@ public class ServerMessage {
         calendar.add(Calendar.SECOND, 15);
         this.expiredTime = calendar.getTime().getTime();
     }
-    
+
     public ServerMessage(GameContext gameContext) {
-    	this.gameContext = gameContext;
+        this.gameContext = gameContext;
         Date now = new Date();
         this.time = now.getTime();
 
@@ -56,7 +56,7 @@ public class ServerMessage {
         calendar.add(Calendar.SECOND, 15);
         this.expiredTime = calendar.getTime().getTime();
     }
-    
+
     public Type getType() {
         return type;
     }
@@ -98,17 +98,15 @@ public class ServerMessage {
     }
 
     public List<String> getIdleUsers() {
-		return idleUsers;
-	}
+        return idleUsers;
+    }
 
     public void setIdleUsers(List<String> idleUsers) {
-    	this.idleUsers = idleUsers;
+        this.idleUsers = idleUsers;
     }
-    
-	public enum Type {
+
+    public enum Type {
         REQUEST, INFORMATION, ERROR
     }
 
 }
-
-

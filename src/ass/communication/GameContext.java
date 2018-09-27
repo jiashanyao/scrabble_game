@@ -23,10 +23,9 @@ public class GameContext {
     private Map<String, Integer> scores;
 
     public GameContext() {
-    	gamingUsers = new ArrayList<>();
-    	invitedUser = new ArrayList<>();
+        gamingUsers = new ArrayList<>();
+        invitedUser = new ArrayList<>();
     }
-
 
     public GameStatus getGameStatus() {
         return gameStatus;
@@ -76,24 +75,23 @@ public class GameContext {
         this.scores = scores;
     }
 
-	public List<String> getGamingUsers() {
-		return gamingUsers;
-	}
+    public List<String> getGamingUsers() {
+        return gamingUsers;
+    }
 
+    public void setGamingUsers(List<String> gamingUsers) {
+        this.gamingUsers = gamingUsers;
+    }
 
-	public void setGamingUsers(List<String> gamingUsers) {
-		this.gamingUsers = gamingUsers;
-	}
+    public List<String> getInvitedUser() {
+        return invitedUser;
+    }
 
-	public List<String> getInvitedUser() {
-		return invitedUser;
-	}
+    public void setInvitedUser(List<String> invitedUser) {
+        this.invitedUser = invitedUser;
+    }
 
-	public void setInvitedUser(List<String> invitedUser) {
-		this.invitedUser = invitedUser;
-	}
-
-	public enum GameStatus {
+    public enum GameStatus {
         IDLING, INVITING, GAMING, HIGHLIGHT, VOTING
     }
 
