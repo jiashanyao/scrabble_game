@@ -6,8 +6,6 @@ import java.util.Map;
 
 public class GameContext {
 
-    private List<String> idleUsers;
-
     private List<String> gamingUsers;
 
     private List<String> invitedUser;
@@ -25,7 +23,6 @@ public class GameContext {
     private Map<String, Integer> scores;
 
     public GameContext() {
-    	idleUsers = new ArrayList<>();
     	gamingUsers = new ArrayList<>();
     	invitedUser = new ArrayList<>();
     }
@@ -78,15 +75,6 @@ public class GameContext {
     public void setScores(Map<String, Integer> scores) {
         this.scores = scores;
     }
-
-    public List<String> getIdleUsers() {
-		return idleUsers;
-	}
-
-
-	public void setIdleUsers(List<String> idleUsers) {
-		this.idleUsers = idleUsers;
-	}
 
 	public List<String> getGamingUsers() {
 		return gamingUsers;

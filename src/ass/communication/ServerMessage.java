@@ -1,7 +1,9 @@
 package ass.communication;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by hugh on 20/9/18.
@@ -9,6 +11,8 @@ import java.util.Date;
 public class ServerMessage {
 
     private Type type;
+    
+    private List<String> idleUsers;
 
     private GameContext gameContext;
 
@@ -22,6 +26,7 @@ public class ServerMessage {
         Date now = new Date();
         this.time = now.getTime();
 
+        idleUsers = new ArrayList<>();
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(now);
         calendar.add(Calendar.SECOND, 15);
@@ -33,6 +38,7 @@ public class ServerMessage {
         Date now = new Date();
         this.time = now.getTime();
 
+        idleUsers = new ArrayList<>();
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(now);
         calendar.add(Calendar.SECOND, 15);
@@ -44,6 +50,7 @@ public class ServerMessage {
         Date now = new Date();
         this.time = now.getTime();
 
+        idleUsers = new ArrayList<>();
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(now);
         calendar.add(Calendar.SECOND, 15);
@@ -90,7 +97,15 @@ public class ServerMessage {
         this.expiredTime = expiredTime;
     }
 
-    public enum Type {
+    public List<String> getIdleUsers() {
+		return idleUsers;
+	}
+
+    public void setIdleUsers(List<String> idleUsers) {
+    	this.idleUsers = idleUsers;
+    }
+    
+	public enum Type {
         REQUEST, INFORMATION
     }
 
