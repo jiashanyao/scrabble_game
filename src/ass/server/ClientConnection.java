@@ -135,6 +135,6 @@ public class ClientConnection extends Thread{
 	}
 
 	public enum ClientState{
-		IDLE, INVITING, INVITED, GAMING
+		IDLE, INVITING, INVITED, GAMING, VOTING, PASSING
 	}
 }
