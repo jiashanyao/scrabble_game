@@ -105,7 +105,7 @@ public class ClientConsole extends JFrame {
         this.userId = username;
         // pass username to server
         ClientMessage cm = new ClientMessage();
-        cm.setType(ClientMessage.Type.START);
+        cm.setType(ClientMessage.Type.SYNC);
         cm.setUserId(this.userId);
         this.writer.write(JsonUtility.toJson(cm) + "\n");
         this.writer.flush();
@@ -509,7 +509,7 @@ public class ClientConsole extends JFrame {
                                 //update idle users
                                 listModel.clear();
                                 java.util.List<String> invitedUsers =
-                                    null == headMessage.getGameContext() && null != gameContext.getInvitedUser() ? gameContext.getInvitedUser() : new ArrayList<>();
+                                    null != headMessage.getGameContext() && null != gameContext.getInvitedUser() ? gameContext.getInvitedUser() : new ArrayList<>();
                                 for (String user : headMessage.getIdleUsers()) {
                                     listModel.addElement(invitedUsers.contains(user) ? user + " (invited)" : user);
                                 }
