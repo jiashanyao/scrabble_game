@@ -66,12 +66,11 @@ public class Server {
     	Thread listen = new Thread() {	// this thread is for listening to and start client connections
     		@Override
     		public void run() {
-    			System.out.println("Started listening on port " + serverSocket.getLocalPort());
+    			System.out.println("Listening on port " + serverSocket.getLocalPort());
 				while (true) {
 					try {
 						if (clients.size() < MAX_CLIENTS) {		// limit max client number to prevent crash
 							Socket clientSocket = serverSocket.accept();
-							System.out.println("Serving a client at " + clientSocket.getInetAddress().getHostAddress());
 							new ClientConnection(clientSocket, theServer).start();
 						} else {
 							Thread.sleep(5000);		// iterate every 5 seconds when clients are full for lower CPU use

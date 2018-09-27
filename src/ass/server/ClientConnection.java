@@ -14,13 +14,13 @@ import ass.communication.ServerMessage;
 
 public class ClientConnection extends Thread{
 
+	private String userId;
+	
 	private Socket clientSocket;
 
 	private Server server;
 
 	private GameContext gameContext;
-	
-	private String userId;
 	
 	private ClientState clientState;
 	
@@ -58,25 +58,30 @@ public class ClientConnection extends Thread{
 							if (server.getClients().containsKey(cm.getUserId())){
 								sm.setType(ServerMessage.Type.ERROR);
 								sm.setMessage(Dictionary.ID_DUP);
-								//clientSocket.close();		// if username duplicates, socket can close
-								//return;					// and thread can terminate
-								// or request user to enter another username?
+								write(sm);
+								clientSocket.close();		// if username duplicates, socket can close
+								return;					// and thread can terminate
 							} else {
 								userId = cm.getUserId();
 								clientState = ClientState.IDLE;
 								server.getClients().put(userId, thisClientConnection);
+								System.out.println("Client " + userId + ": Connection established.");
 								sm.setType(ServerMessage.Type.INFORMATION);
 								sm.setMessage(Dictionary.ID_OK);
 								sm.setIdleUsers(server.getIdleUsers());
+								write(sm);
 							}
-							write(sm);
 						} else {
 							server.getMessageQueue().put(cm);
 						}
 					}
+					clientSocket.close();
+					server.getClients().remove(userId, thisClientConnection);
+					System.out.println(
+							"Client " + userId + ": Connection closed.");
 				} catch (IOException e) {
 					System.out.println(
-							"Client " + clientSocket.getInetAddress().getHostAddress() + ": Connection interrupted!");
+							"Client " + userId + ": Connection interrupted!");
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
