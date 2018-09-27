@@ -57,7 +57,7 @@ public class MessageHandling extends Thread {
                             cc.setClientState(ClientState.INVITED);
                             gameContext.getInvitedUser().add(user);
                             ServerMessage invitation = new ServerMessage(
-                                    client.getUserId() + " invites you to a game. y/n?");
+                                    client.getUserId() + " invites you to a game. yes/no?");
                             invitation.setType(ServerMessage.Type.REQUEST);
                             invitation.setIdleUsers(server.getIdleUsers());
                             cc.write(invitation);
@@ -65,6 +65,10 @@ public class MessageHandling extends Thread {
                     }
                     sm.setIdleUsers(server.getIdleUsers());
                     client.write(sm);
+                    ServerMessage idleUserUpdate = new ServerMessage("Idle user update");
+                    idleUserUpdate.setType(ServerMessage.Type.INFORMATION);
+                    idleUserUpdate.setIdleUsers(server.getIdleUsers());
+                    // TODO: notifyAll(idleUserUpdate)
                 }
                 break;
             case INVITATION_CONFIRM:

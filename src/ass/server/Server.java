@@ -1,6 +1,8 @@
 package ass.server;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -87,6 +89,31 @@ public class Server {
         listen.start();
         MessageHandling messageHandling = new MessageHandling(this);
         messageHandling.start();
+        Thread standardInput = new Thread() {
+            @Override
+            public void run() {
+                BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
+                try {
+                    while (true) {
+                        String input = keyboard.readLine();
+                        if (input.equals("stats")) {
+                            System.out.println("User list:");
+                            for (ClientConnection cc : clients.values()) {
+                                System.out.println(cc.getUserId() + "\t " + cc.getClientState());
+                            }
+                        } else if (input.equals("exit")) {
+                            System.out.println("Normal exit.");
+                            System.exit(0);
+                        } else {
+                            System.out.println("Unrecognized command!");
+                        }
+                    }
+                } catch (IOException e) {
+                    System.out.println("An I/O error happens! Exit.");
+                }
+            }
+        };
+        standardInput.start();
     }
 
     public boolean isNumeric(String s) {

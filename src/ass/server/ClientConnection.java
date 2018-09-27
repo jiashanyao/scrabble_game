@@ -64,7 +64,7 @@ public class ClientConnection extends Thread {
                                 userId = cm.getUserId();
                                 clientState = ClientState.IDLE;
                                 server.getClients().put(userId, thisClientConnection);
-                                System.out.println("Client " + userId + ": Connection established.");
+                                System.out.println(userId + "\t Connection established.");
                                 ServerMessage sm = new ServerMessage(Dictionary.ID_OK);
                                 sm.setType(ServerMessage.Type.INFORMATION);
                                 sm.setIdleUsers(server.getIdleUsers());
@@ -84,9 +84,9 @@ public class ClientConnection extends Thread {
                     idleUserUpdate.setType(ServerMessage.Type.INFORMATION);
                     idleUserUpdate.setIdleUsers(server.getIdleUsers());
                     writeToOthers(idleUserUpdate);
-                    System.out.println("Client " + userId + ": Connection closed.");
+                    System.out.println(userId + "\t Connection closed.");
                 } catch (IOException e) {
-                    System.out.println("Client " + userId + ": Connection interrupted!");
+                    System.out.println(userId + "\t Connection interrupted!");
                 } catch (InterruptedException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
