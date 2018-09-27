@@ -629,6 +629,9 @@ public class ClientConsole extends JFrame {
                                         e.printStackTrace();
                                     }
                                 }
+                            } else if (ServerMessage.Type.ERROR.equals(type)) {
+                                JOptionPane.showMessageDialog(null, headMessage.getMessage());
+                                System.exit(0);
                             }
 
                         } catch (InterruptedException e) {

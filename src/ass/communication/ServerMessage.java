@@ -106,7 +106,7 @@ public class ServerMessage {
     }
     
 	public enum Type {
-        REQUEST, INFORMATION
+        REQUEST, INFORMATION, ERROR
     }
 
 }
