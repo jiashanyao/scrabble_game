@@ -504,82 +504,86 @@ public class ClientConsole extends JFrame {
                             Date newVersion = new Date(headMessage.getTime());
                             ServerMessage.Type type = headMessage.getType();
                             //update pane
-                            if (context.getCurrentVersion().before(newVersion) && null != headMessage.getGameContext()) {
-                                gameContext = headMessage.getGameContext();
-                                String currentPlayer = gameContext.getCurrentUser();
-                                //update game board
-                                GameContext.GameStatus status = gameContext.getGameStatus();
-                                if (null != gameContext.getGameBoard()) {
-                                    gameTable.setModel(new DefaultTableModel(gameContext.getGameBoard(), gameColumnNames));
-                                } else {
-                                    gameTable.setModel(new DefaultTableModel(plainBoard, gameColumnNames));
-                                }
-
-                                setTableRender(gameTable);
+                            if (context.getCurrentVersion().before(newVersion)) {
 
                                 //update idle users
                                 listModel.clear();
-                                java.util.List<String> invitedUsers = null != gameContext.getInvitedUser() ? gameContext.getInvitedUser() : new ArrayList<>();
-                                for (String user : gameContext.getIdleUsers()) {
+                                java.util.List<String> invitedUsers =
+                                    null == headMessage.getGameContext() && null != gameContext.getInvitedUser() ? gameContext.getInvitedUser() : new ArrayList<>();
+                                for (String user : headMessage.getIdleUsers()) {
                                     listModel.addElement(invitedUsers.contains(user) ? user + " (invited)" : user);
                                 }
                                 idlePlayerList.setModel(listModel);
 
-                                //update players table
-                                Object[][] playerModel = null;
-                                if (null != gameContext.getScores()) {
-                                    int index = 0;
-                                    playerModel = new Object[gameContext.getScores().size()][3];
-                                    for (Map.Entry<String, Integer> player : gameContext.getScores().entrySet()) {
-                                        playerModel[index][0] = player.getKey();
-                                        playerModel[index][1] = player.getKey().equals(currentPlayer) ? "playing" : "";
-                                        playerModel[index][2] = player.getValue();
-                                        index++;
+                                // joint a game already
+                                if (null != headMessage.getGameContext()) {
+                                    gameContext = headMessage.getGameContext();
+                                    String currentPlayer = gameContext.getCurrentUser();
+                                    //update game board
+                                    GameContext.GameStatus status = gameContext.getGameStatus();
+                                    if (null != gameContext.getGameBoard()) {
+                                        gameTable.setModel(new DefaultTableModel(gameContext.getGameBoard(), gameColumnNames));
+                                    } else {
+                                        gameTable.setModel(new DefaultTableModel(plainBoard, gameColumnNames));
                                     }
-                                } else {
-                                    playerModel = new Object[][] {};
-                                }
-                                playerTable.setModel(new DefaultTableModel(playerModel, plColumnNames));
+                                    setTableRender(gameTable);
 
-                                //update button status
-                                switch (status) {
-                                    case IDLING:
-                                        gameTable.setEnabled(false);
-                                        btnInvite.setEnabled(true);
-                                        btnStartGame.setEnabled(false);
-                                        btnPass.setEnabled(false);
-                                        btnEndGame.setEnabled(false);
-                                        break;
-                                    case INVITING:
-                                        gameTable.setEnabled(false);
-                                        btnInvite.setEnabled(userId.equals(currentPlayer));
-                                        btnStartGame.setEnabled(userId.equals(currentPlayer));
-                                        btnPass.setEnabled(false);
-                                        btnEndGame.setEnabled(false);
-                                        break;
-                                    case GAMING:
-                                        java.util.List<String> players = gameContext.getGamingUsers();
-                                        if (players.contains(userId) && userId.equals(currentPlayer)) {
-                                            gameTable.setEnabled(true);
-                                        } else {
-                                            gameTable.setEnabled(false);
+                                    //update players table
+                                    Object[][] playerModel;
+                                    if (null != gameContext.getScores()) {
+                                        int index = 0;
+                                        playerModel = new Object[gameContext.getScores().size()][3];
+                                        for (Map.Entry<String, Integer> player : gameContext.getScores().entrySet()) {
+                                            playerModel[index][0] = player.getKey();
+                                            playerModel[index][1] = player.getKey().equals(currentPlayer) ? "playing" : "";
+                                            playerModel[index][2] = player.getValue();
+                                            index++;
                                         }
-                                        btnInvite.setEnabled(false);
-                                        btnStartGame.setEnabled(false);
-                                        btnPass.setEnabled(true);
-                                        btnEndGame.setEnabled(true);
-                                        break;
-                                    case HIGHLIGHT:
-                                    case VOTING:
-                                        gameTable.setEnabled(false);
-                                        btnInvite.setEnabled(false);
-                                        btnStartGame.setEnabled(false);
-                                        btnPass.setEnabled(true);
-                                        btnEndGame.setEnabled(true);
-                                        break;
-                                    default:
-                                        throw new IllegalArgumentException("Game status miss match");
+                                    } else {
+                                        playerModel = new Object[][] {};
+                                    }
+                                    playerTable.setModel(new DefaultTableModel(playerModel, plColumnNames));
 
+                                    //update button status
+                                    switch (status) {
+                                        case IDLING:
+                                            gameTable.setEnabled(false);
+                                            btnInvite.setEnabled(true);
+                                            btnStartGame.setEnabled(false);
+                                            btnPass.setEnabled(false);
+                                            btnEndGame.setEnabled(false);
+                                            break;
+                                        case INVITING:
+                                            gameTable.setEnabled(false);
+                                            btnInvite.setEnabled(userId.equals(currentPlayer));
+                                            btnStartGame.setEnabled(userId.equals(currentPlayer));
+                                            btnPass.setEnabled(false);
+                                            btnEndGame.setEnabled(false);
+                                            break;
+                                        case GAMING:
+                                            java.util.List<String> players = gameContext.getGamingUsers();
+                                            if (players.contains(userId) && userId.equals(currentPlayer)) {
+                                                gameTable.setEnabled(true);
+                                            } else {
+                                                gameTable.setEnabled(false);
+                                            }
+                                            btnInvite.setEnabled(false);
+                                            btnStartGame.setEnabled(false);
+                                            btnPass.setEnabled(true);
+                                            btnEndGame.setEnabled(true);
+                                            break;
+                                        case HIGHLIGHT:
+                                        case VOTING:
+                                            gameTable.setEnabled(false);
+                                            btnInvite.setEnabled(false);
+                                            btnStartGame.setEnabled(false);
+                                            btnPass.setEnabled(true);
+                                            btnEndGame.setEnabled(true);
+                                            break;
+                                        default:
+                                            throw new IllegalArgumentException("Game status miss match");
+
+                                    }
                                 }
                                 context.setCurrentVersion(newVersion);
                             }
