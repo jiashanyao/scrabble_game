@@ -74,7 +74,7 @@ public class MessageHandling extends Thread {
                     ServerMessage idleUserUpdate = new ServerMessage("Idle user update");
                     idleUserUpdate.setType(ServerMessage.Type.INFORMATION);
                     idleUserUpdate.setIdleUsers(server.getIdleUsers());
-                    // TODO: notifyAll(idleUserUpdate)
+                    notifyAllClients(idleUserUpdate);
                 }
                 break;
             case INVITATION_CONFIRM:
