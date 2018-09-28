@@ -29,7 +29,6 @@ public class GameContext {
         invitedUser = new ArrayList<>();
     }
 
-
     public GameStatus getGameStatus() {
         return gameStatus;
     }
