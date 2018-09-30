@@ -223,9 +223,14 @@ public class MessageHandling extends Thread {
                 }
             }
             case END:
-                client.setGameContext(null);
-                ServerMessage endMessage = new ServerMessage(client.getGameContext());
+                GameContext endContext = new GameContext();
+                endContext.setGameStatus(GameStatus.IDLING);
+                ServerMessage endMessage = new ServerMessage(endContext);
                 endMessage.setType(Type.INFORMATION);
+                Map.Entry<String, Integer> winner = getWinner(client.getGameContext().getScores());
+                endMessage.setMessage("Game End. Winner is " + winner.getKey() + ", score is "
+                        + winner.getValue());
+                client.setGameContext(endContext);
                 notifyAllClients(endMessage);
                 break;
             default:
@@ -299,5 +304,15 @@ public class MessageHandling extends Thread {
             ClientConnection clientConnection = clients.get(user);
             clientConnection.setClientState(ClientState.GAMING);
         }
+    }
+
+    private Map.Entry<String, Integer> getWinner(Map<String, Integer> scoreList) {
+        Map.Entry<String, Integer> winner = null;
+        for (Map.Entry<String, Integer> scoreItem : scoreList.entrySet()) {
+            if (winner == null || (scoreItem.getValue().compareTo(winner.getValue()) > 0)) {
+                winner = scoreItem;
+            }
+        }
+        return winner;
     }
 }
