@@ -505,19 +505,19 @@ public class ClientConsole extends JFrame {
                             ServerMessage.Type type = headMessage.getType();
                             //update pane
                             if (context.getCurrentVersion().before(newVersion)) {
+                                gameContext = headMessage.getGameContext();
 
                                 //update idle users
                                 listModel.clear();
                                 java.util.List<String> invitedUsers =
-                                    null != headMessage.getGameContext() && null != gameContext.getInvitedUser() ? gameContext.getInvitedUser() : new ArrayList<>();
+                                    null != gameContext && null != gameContext.getInvitedUser() ? gameContext.getInvitedUser() : new ArrayList<>();
                                 for (String user : headMessage.getIdleUsers()) {
                                     listModel.addElement(invitedUsers.contains(user) ? user + " (invited)" : user);
                                 }
                                 idlePlayerList.setModel(listModel);
 
                                 // joint a game already
-                                if (null != headMessage.getGameContext()) {
-                                    gameContext = headMessage.getGameContext();
+                                if(null!=gameContext){
                                     String currentPlayer = gameContext.getCurrentUser();
                                     //update game board
                                     GameContext.GameStatus status = gameContext.getGameStatus();
@@ -582,57 +582,61 @@ public class ClientConsole extends JFrame {
                                             break;
                                         default:
                                             throw new IllegalArgumentException("Game status miss match");
-
                                     }
+                                }
+
+                                // require response
+                                if (ServerMessage.Type.REQUEST.equals(type)) {
+
+                                    Date expiredTime = new Date(headMessage.getExpiredTime());
+                                    if (expiredTime.after(new Date())) {
+                                        try {
+
+                                            GameContext.GameStatus status = null != gameContext ? gameContext.getGameStatus() : GameContext.GameStatus.INVITING;
+                                            ClientMessage.Type responseType = null == RESPONSE_MAP.get(status) ? ClientMessage.Type.SYNC : RESPONSE_MAP.get(status);
+                                            ClientMessage clientMessage = new ClientMessage();
+                                            clientMessage.setUserId(userId);
+                                            clientMessage.setType(responseType);
+                                            int dialogResult = JOptionPane.showConfirmDialog(null, headMessage.getMessage());
+
+                                            if (JOptionPane.YES_OPTION == dialogResult) {
+
+                                                switch (status) {
+                                                    case HIGHLIGHT:
+                                                        highlightListener = new HighlightListener(gameTable, gameContext.getCellX(), gameContext.getCellY());
+                                                        gameTable.addMouseMotionListener(highlightListener);
+                                                        break;
+                                                    case INVITING:
+                                                    case VOTING:
+                                                        clientMessage.setResponse(true);
+                                                        writer.write(JsonUtility.toJson(clientMessage) + "\n");
+                                                        writer.flush();
+                                                        break;
+                                                    default:
+                                                        JOptionPane.showMessageDialog(null, "Unexpected action...");
+                                                        break;
+                                                }
+
+                                            } else {
+                                                clientMessage.setResponse(false);
+                                                writer.write(JsonUtility.toJson(clientMessage) + "\n");
+                                                writer.flush();
+                                            }
+
+
+                                        } catch (IOException e) {
+                                            //TODO handle
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                } else if (ServerMessage.Type.ERROR.equals(type)) {
+                                    JOptionPane.showMessageDialog(null, headMessage.getMessage());
+                                    System.exit(0);
                                 }
                                 context.setCurrentVersion(newVersion);
                             }
 
-                            // require response
-                            if (ServerMessage.Type.REQUEST.equals(type)) {
 
-                                Date expiredTime = new Date(headMessage.getExpiredTime());
-                                if (expiredTime.after(new Date())) {
-                                    try {
-                                        GameContext.GameStatus status = gameContext.getGameStatus();
-                                        ClientMessage.Type responseType = null == RESPONSE_MAP.get(status) ? ClientMessage.Type.SYNC : RESPONSE_MAP.get(status);
-                                        ClientMessage clientMessage = new ClientMessage();
-                                        clientMessage.setUserId(userId);
-                                        clientMessage.setType(responseType);
-                                        int dialogResult = JOptionPane.showConfirmDialog(null, headMessage.getMessage());
-
-                                        if (JOptionPane.YES_OPTION == dialogResult) {
-                                            switch (status) {
-                                                case HIGHLIGHT:
-                                                    highlightListener = new HighlightListener(gameTable, gameContext.getCellX(), gameContext.getCellY());
-                                                    gameTable.addMouseMotionListener(highlightListener);
-                                                    break;
-                                                case INVITING:
-                                                case VOTING:
-                                                    clientMessage.setResponse(true);
-                                                    writer.write(JsonUtility.toJson(clientMessage) + "\n");
-                                                    writer.flush();
-                                                    break;
-                                                default:
-                                                    JOptionPane.showMessageDialog(null, "Unexpected action...");
-                                                    break;
-                                            }
-                                        } else {
-                                            clientMessage.setResponse(false);
-                                            writer.write(JsonUtility.toJson(clientMessage) + "\n");
-                                            writer.flush();
-                                        }
-
-
-                                    } catch (IOException e) {
-                                        //TODO handle
-                                        e.printStackTrace();
-                                    }
-                                }
-                            } else if (ServerMessage.Type.ERROR.equals(type)) {
-                                JOptionPane.showMessageDialog(null, headMessage.getMessage());
-                                System.exit(0);
-                            }
 
                         } catch (InterruptedException e) {
                             //TODO handle blocking
