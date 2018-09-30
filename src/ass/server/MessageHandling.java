@@ -1,8 +1,6 @@
 package ass.server;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +59,8 @@ public class MessageHandling extends Thread {
                     for (String user : toBeInvited) {
                         // check if a user is eligible for being invited
                         ClientConnection cc = server.getClients().get(user);
-                        if (cc.getClientState() != ClientState.GAMING && cc.getClientState() != ClientState.INVITING) {
+                        if (cc.getClientState() != ClientState.GAMING
+                                && cc.getClientState() != ClientState.INVITING) {
                             // if invited client is not gaming or inviting, invite him
                             // new invitation can overwrite old invitation
                             invited.add(cc);
@@ -88,20 +87,25 @@ public class MessageHandling extends Thread {
                 }
                 break;
             case INVITATION_CONFIRM:
-                if (client.getClientState() == ClientConnection.ClientState.INVITED && client.getGameContext() != null
-                        && cm.isAccept()) {
-                    client.getGameContext().getGamingUsers().add(client.getUserId()); // join game of latest invitation
-                    client.setClientState(ClientState.INVITING); // after joining, he can invite other users as well
+                if (client.getClientState() == ClientConnection.ClientState.INVITED
+                        && client.getGameContext() != null && cm.isAccept()) {
+                    client.getGameContext().getGamingUsers().add(client.getUserId()); // join game
+                                                                                      // of latest
+                                                                                      // invitation
+                    client.setClientState(ClientState.INVITING); // after joining, he can invite
+                                                                 // other users as well
                     ServerMessage sm = new ServerMessage("You are in the game.");
                     sm.setType(Type.INFORMATION);
                     sm.setGameContext(client.getGameContext());
                     sm.setIdleUsers(server.getIdleUsers());
                     client.write(sm);
-                    ServerMessage replyToHost = new ServerMessage(client.getUserId() + " has joined your game.");
+                    ServerMessage replyToHost =
+                            new ServerMessage(client.getUserId() + " has joined your game.");
                     replyToHost.setType(Type.INFORMATION);
                     replyToHost.setGameContext(client.getGameContext());
                     replyToHost.setIdleUsers(server.getIdleUsers());
-                    ClientConnection host = server.getClients().get(client.getGameContext().getCurrentUser());
+                    ClientConnection host =
+                            server.getClients().get(client.getGameContext().getCurrentUser());
                     host.write(replyToHost);
                     ServerMessage idleUserUpdate = new ServerMessage("Idle user update");
                     idleUserUpdate.setType(ServerMessage.Type.INFORMATION);
@@ -110,17 +114,21 @@ public class MessageHandling extends Thread {
                 }
                 break;
             case START: {
-                String currentUserID = cm.getUserId();
-                List<String> gamingUser = new ArrayList<>();
-                gamingUser.add(currentUserID);
-                GameContext gameContext = new GameContext();
-                gameContext.setGameStatus(GameStatus.IDLING);
-                gameContext.setGamingUsers(gamingUser);
-                client.setGameContext(gameContext);
-                ServerMessage startInformation = new ServerMessage(gameContext);
-                startInformation.setIdleUsers(server.getIdleUsers());
-                startInformation.setType(Type.INFORMATION);
-                notifyAllClients(startInformation);
+                GameContext startContext = client.getGameContext();
+                if (startContext.getGameStatus().equals(GameStatus.INVITING)) {
+                    String currentUserID = cm.getUserId();
+                    startContext.setGameStatus(GameStatus.GAMING);
+                    startContext.setCurrentUser(currentUserID);
+                    client.setGameContext(startContext);
+
+                    startGameClientStatusChange(startContext.getGamingUsers());
+
+                    ServerMessage startInformation = new ServerMessage(startContext);
+                    startInformation.setIdleUsers(server.getIdleUsers());
+                    startInformation.setType(Type.INFORMATION);
+                    startInformation.setMessage("Game Start!");
+                    notifyAllClients(startInformation);
+                }
                 break;
             }
             case CHARACTER: {
@@ -140,12 +148,25 @@ public class MessageHandling extends Thread {
                 break;
             }
             case HIGHLIGHT: {
+                String[] highStr = cm.getHighLight();
                 GameContext highContext = client.getGameContext();
-                highContext.setGameStatus(GameStatus.VOTING);
-                highContext.setHighLight(cm.getHighLight());
-                changeClientThreadStatus(ClientState.VOTING);
-                ServerMessage highLightMessage = new ServerMessage(highContext);
-                notifyAllClients(highLightMessage);
+                if ((highStr == null) || (highStr[0] == "" && highStr[1] == "")) {
+                    highContext.setGameStatus(GameStatus.GAMING);
+                    String currentUser =
+                            getNextUser(highContext.getGamingUsers(), highContext.getCurrentUser());
+                    highContext.setCurrentUser(currentUser);
+                    ServerMessage highLightMessage = new ServerMessage(highContext);
+                    highLightMessage.setMessage("Now it is " + currentUser + "'s turn");
+                    notifyAllClients(highLightMessage);
+                } else {
+                    highContext.setGameStatus(GameStatus.VOTING);
+                    highContext.setHighLight(highStr);
+                    changeClientThreadStatus(ClientState.VOTING);
+                    ServerMessage highLightMessage = new ServerMessage(highContext);
+                    highLightMessage.setType(Type.REQUEST);
+                    highLightMessage.setMessage("Voting Yes/No for words");
+                    notifyAllClients(highLightMessage);
+                }
                 break;
             }
             case VOTE: {
@@ -202,9 +223,14 @@ public class MessageHandling extends Thread {
                 }
             }
             case END:
-                client.setGameContext(null);
-                ServerMessage endMessage = new ServerMessage(client.getGameContext());
+                GameContext endContext = new GameContext();
+                endContext.setGameStatus(GameStatus.IDLING);
+                ServerMessage endMessage = new ServerMessage(endContext);
                 endMessage.setType(Type.INFORMATION);
+                Map.Entry<String, Integer> winner = getWinner(client.getGameContext().getScores());
+                endMessage.setMessage("Game End. Winner is " + winner.getKey() + ", score is "
+                        + winner.getValue());
+                client.setGameContext(endContext);
                 notifyAllClients(endMessage);
                 break;
             default:
@@ -270,5 +296,23 @@ public class MessageHandling extends Thread {
             Map.Entry<String, ClientConnection> tClient = entries.next();
             tClient.getValue().setClientState(cType);
         }
+    }
+
+    private void startGameClientStatusChange(List<String> gamingUsers) {
+        Map<String, ClientConnection> clients = this.server.getClients();
+        for (String user : gamingUsers) {
+            ClientConnection clientConnection = clients.get(user);
+            clientConnection.setClientState(ClientState.GAMING);
+        }
+    }
+
+    private Map.Entry<String, Integer> getWinner(Map<String, Integer> scoreList) {
+        Map.Entry<String, Integer> winner = null;
+        for (Map.Entry<String, Integer> scoreItem : scoreList.entrySet()) {
+            if (winner == null || (scoreItem.getValue().compareTo(winner.getValue()) > 0)) {
+                winner = scoreItem;
+            }
+        }
+        return winner;
     }
 }
