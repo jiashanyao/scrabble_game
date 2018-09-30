@@ -2,6 +2,7 @@ package ass.server;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -55,24 +56,29 @@ public class MessageHandling extends Thread {
                         gameContext = client.getGameContext();
                         sm.setMessage("You invited someone(s).");
                     }
-                    sm.setGameContext(gameContext);
-                    String[] invited = cm.getInvitations();
-                    gameContext.setInvitedUser(Arrays.asList(invited)); // may contain someone who are not available for being invited
-                    for (String user : invited) {
+                    String[] toBeInvited = cm.getInvitations();
+                    List<ClientConnection> invited = new ArrayList<>();
+                    for (String user : toBeInvited) {
+                        // check if a user is eligible for being invited
                         ClientConnection cc = server.getClients().get(user);
                         if (cc.getClientState() != ClientState.GAMING && cc.getClientState() != ClientState.INVITING) {
                             // if invited client is not gaming or inviting, invite him
                             // new invitation can overwrite old invitation
-                            cc.setGameContext(gameContext);
-                            cc.setClientState(ClientState.INVITED);
-                            ServerMessage invitation = new ServerMessage(
-                                    client.getUserId() + " invites you to a game. yes/no?");
-                            invitation.setType(ServerMessage.Type.REQUEST);
-                            invitation.setIdleUsers(server.getIdleUsers());
-                            invitation.setGameContext(gameContext);
-                            cc.write(invitation);
+                            invited.add(cc);
+                            gameContext.getInvitedUser().add(user);
                         }
                     }
+                    for (ClientConnection cc : invited) {
+                        cc.setGameContext(gameContext);
+                        cc.setClientState(ClientState.INVITED);
+                        ServerMessage invitation = new ServerMessage(
+                                client.getUserId() + " invites you to a game. yes/no?");
+                        invitation.setType(ServerMessage.Type.REQUEST);
+                        invitation.setIdleUsers(server.getIdleUsers());
+                        invitation.setGameContext(gameContext);
+                        cc.write(invitation);
+                    }
+                    sm.setGameContext(gameContext);
                     sm.setIdleUsers(server.getIdleUsers());
                     client.write(sm);
                     ServerMessage idleUserUpdate = new ServerMessage("Idle user update");
