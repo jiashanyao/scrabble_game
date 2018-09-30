@@ -508,7 +508,7 @@ public class ClientConsole extends JFrame {
                                 Long newVersion = headMessage.getTime();
                                 ServerMessage.Type type = headMessage.getType();
                                 //update pane
-                                if (context.getCurrentVersion() <= newVersion) {
+                                //if (context.getCurrentVersion() <= newVersion) {
                                     gContext = headMessage.getGameContext();
 
                                     //update idle users
@@ -642,7 +642,7 @@ public class ClientConsole extends JFrame {
                                         System.exit(0);
                                     }
                                     context.setCurrentVersion(newVersion);
-                                }
+                                //}
                             }
                         }
 
