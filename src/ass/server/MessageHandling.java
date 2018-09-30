@@ -46,7 +46,7 @@ public class MessageHandling extends Thread {
                     if (client.getClientState() != ClientState.INVITING) {
                         gameContext = new GameContext();
                         gameContext.setCurrentUser(client.getUserId());
-                        gameContext.setGameStatus(GameContext.GameStatus.IDLING);
+                        gameContext.setGameStatus(GameContext.GameStatus.INVITING);
                         gameContext.getGamingUsers().add(client.getUserId());
                         client.setGameContext(gameContext);
                         client.setClientState(ClientState.INVITING);
