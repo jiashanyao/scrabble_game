@@ -19,6 +19,7 @@ import java.awt.event.MouseEvent;
 import java.io.*;
 import java.net.Socket;
 import java.util.*;
+import java.util.List;
 
 
 /**
@@ -517,7 +518,7 @@ public class ClientConsole extends JFrame {
                                 idlePlayerList.setModel(listModel);
 
                                 // joint a game already
-                                if(null!=gameContext){
+                                if (null != gameContext) {
                                     String currentPlayer = gameContext.getCurrentUser();
                                     //update game board
                                     GameContext.GameStatus status = gameContext.getGameStatus();
@@ -530,13 +531,15 @@ public class ClientConsole extends JFrame {
 
                                     //update players table
                                     Object[][] playerModel;
-                                    if (null != gameContext.getScores()) {
+                                    List<String> gamingUsers = gameContext.getGamingUsers();
+                                    Map<String, Integer> scoresMap = null != gameContext.getScores() ? gameContext.getScores() : new HashMap<String, Integer>();
+                                    if (null != gamingUsers && gamingUsers.size() > 0) {
                                         int index = 0;
-                                        playerModel = new Object[gameContext.getScores().size()][3];
-                                        for (Map.Entry<String, Integer> player : gameContext.getScores().entrySet()) {
-                                            playerModel[index][0] = player.getKey();
-                                            playerModel[index][1] = player.getKey().equals(currentPlayer) ? "playing" : "";
-                                            playerModel[index][2] = player.getValue();
+                                        playerModel = new Object[gamingUsers.size()][3];
+                                        for (String userId : gamingUsers) {
+                                            playerModel[index][0] = userId;
+                                            playerModel[index][1] = userId.equals(currentPlayer) ? "playing" : "";
+                                            playerModel[index][2] = null == scoresMap.get(userId) ? "" : scoresMap.get(userId);
                                             index++;
                                         }
                                     } else {
