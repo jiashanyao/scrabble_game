@@ -97,7 +97,18 @@ public class MessageHandling extends Thread {
                     sm.setGameContext(client.getGameContext());
                     sm.setIdleUsers(server.getIdleUsers());
                     client.write(sm);
+                    ServerMessage replyToHost = new ServerMessage(client.getUserId() + " has joined your game.");
+                    replyToHost.setType(Type.INFORMATION);
+                    replyToHost.setGameContext(client.getGameContext());
+                    replyToHost.setIdleUsers(server.getIdleUsers());
+                    ClientConnection host = server.getClients().get(client.getGameContext().getCurrentUser());
+                    host.write(replyToHost);
+                    ServerMessage idleUserUpdate = new ServerMessage("Idle user update");
+                    idleUserUpdate.setType(ServerMessage.Type.INFORMATION);
+                    idleUserUpdate.setIdleUsers(server.getIdleUsers());
+                    notifyAllClients(idleUserUpdate);
                 }
+                break;
             case START: {
                 String currentUserID = cm.getUserId();
                 List<String> gamingUser = new ArrayList<>();

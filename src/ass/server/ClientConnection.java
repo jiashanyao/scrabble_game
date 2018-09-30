@@ -81,6 +81,7 @@ public class ClientConnection extends Thread {
                         } else {
                             server.getMessageQueue().put(cm);
                         }
+                        System.out.println("get message: " + input);
                     }
                     clientSocket.close();
                     server.getClients().remove(userId, thisClientConnection);
@@ -98,13 +99,6 @@ public class ClientConnection extends Thread {
             }
         };
         read.start();
-    }
-
-    public void invitedBy(String host) {
-        ServerMessage sm = new ServerMessage();
-        sm.setType(ServerMessage.Type.REQUEST);
-        sm.setMessage(host + " invites you to join a game.\n yes or no?");
-        write(sm);
     }
 
     public void write(ServerMessage serverMessage) {
