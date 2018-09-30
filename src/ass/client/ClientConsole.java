@@ -111,7 +111,8 @@ public class ClientConsole extends JFrame {
         this.writer.write(JsonUtility.toJson(cm) + "\n");
         this.writer.flush();
 
-        setTitle("Scrabble Game");
+        setTitle("Scrabble Game:"+userId);
+        System.out.println("Scrabble Game:"+userId);
         GridBagLayout gridBagLayout = new GridBagLayout();
         gridBagLayout.columnWidths =
             new int[] {30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30};
@@ -502,10 +503,10 @@ public class ClientConsole extends JFrame {
                     if (!context.isEmpty()) {
                         try {
                             ServerMessage headMessage = context.take();
-                            Date newVersion = new Date(headMessage.getTime());
+                            Long newVersion = headMessage.getTime();
                             ServerMessage.Type type = headMessage.getType();
                             //update pane
-                            if (context.getCurrentVersion().before(newVersion)) {
+                            if (context.getCurrentVersion() <= newVersion) {
                                 gameContext = headMessage.getGameContext();
 
                                 //update idle users

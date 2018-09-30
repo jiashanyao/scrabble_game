@@ -8,7 +8,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 
 public class ClientContext extends PriorityBlockingQueue<ServerMessage> {
 
-    private Date currentVersion;
+    private Long currentVersion;
 
     public ClientContext() {
         super(1, new Comparator<ServerMessage>() {
@@ -16,14 +16,14 @@ public class ClientContext extends PriorityBlockingQueue<ServerMessage> {
                 return Math.toIntExact(o2.getTime() - o1.getTime());
             }
         });
-        this.currentVersion = new Date();
+        this.currentVersion = new Date().getTime();
     }
 
-    public Date getCurrentVersion() {
+    public Long getCurrentVersion() {
         return currentVersion;
     }
 
-    public void setCurrentVersion(Date currentVersion) {
+    public void setCurrentVersion(Long currentVersion) {
         this.currentVersion = currentVersion;
     }
 }
