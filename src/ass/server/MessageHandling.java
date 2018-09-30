@@ -1,6 +1,7 @@
 package ass.server;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +45,8 @@ public class MessageHandling extends Thread {
                     sm.setType(Type.INFORMATION);
                     if (client.getClientState() != ClientState.INVITING) {
                         gameContext = new GameContext();
+                        gameContext.setCurrentUser(client.getUserId());
+                        gameContext.setGameStatus(GameContext.GameStatus.IDLING);
                         gameContext.getGamingUsers().add(client.getUserId());
                         client.setGameContext(gameContext);
                         client.setClientState(ClientState.INVITING);
@@ -54,6 +57,7 @@ public class MessageHandling extends Thread {
                     }
                     sm.setGameContext(gameContext);
                     String[] invited = cm.getInvitations();
+                    gameContext.setInvitedUser(Arrays.asList(invited)); // may contain someone who are not available for being invited
                     for (String user : invited) {
                         ClientConnection cc = server.getClients().get(user);
                         if (cc.getClientState() != ClientState.GAMING && cc.getClientState() != ClientState.INVITING) {
@@ -61,11 +65,11 @@ public class MessageHandling extends Thread {
                             // new invitation can overwrite old invitation
                             cc.setGameContext(gameContext);
                             cc.setClientState(ClientState.INVITED);
-                            gameContext.getInvitedUser().add(user);
                             ServerMessage invitation = new ServerMessage(
                                     client.getUserId() + " invites you to a game. yes/no?");
                             invitation.setType(ServerMessage.Type.REQUEST);
                             invitation.setIdleUsers(server.getIdleUsers());
+                            invitation.setGameContext(gameContext);
                             cc.write(invitation);
                         }
                     }

@@ -9,6 +9,7 @@ import java.net.Socket;
 
 import ass.communication.ClientMessage;
 import ass.communication.GameContext;
+import ass.communication.GameContext.GameStatus;
 import ass.communication.JsonUtility;
 import ass.communication.ServerMessage;
 
@@ -66,6 +67,9 @@ public class ClientConnection extends Thread {
                                 server.getClients().put(userId, thisClientConnection);
                                 System.out.println(userId + "\t Connection established.");
                                 ServerMessage sm = new ServerMessage(Dictionary.ID_OK);
+                                GameContext dummyGame = new GameContext();
+                                dummyGame.setGameStatus(GameContext.GameStatus.IDLING);
+                                sm.setGameContext(dummyGame);
                                 sm.setType(ServerMessage.Type.INFORMATION);
                                 sm.setIdleUsers(server.getIdleUsers());
                                 write(sm);
