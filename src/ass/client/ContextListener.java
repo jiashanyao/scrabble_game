@@ -26,7 +26,7 @@ public class ContextListener extends Thread {
                     ServerMessage serverMessage = JsonUtility.fromJson(msg, ServerMessage.class);
 
                     //update ClientContext
-                    context.add(serverMessage);
+                    context.put(serverMessage);
 
                 } catch (Exception e) {
                     e.printStackTrace();
