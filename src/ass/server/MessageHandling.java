@@ -147,7 +147,7 @@ public class MessageHandling extends Thread {
             case HIGHLIGHT: {
                 String[] highStr = cm.getHighLight();
                 GameContext highContext = client.getGameContext();
-                if ((highStr == null) || (highStr[0] == "" && highStr[1] == "")) {
+                if ((highStr == null) || (highStr[0].equals("") && highStr[1].equals(""))) {
                     highContext.setGameStatus(GameStatus.GAMING);
                     String currentUser = getNextUser(highContext.getGamingUsers(), highContext.getCurrentUser());
                     highContext.setCurrentUser(currentUser);
@@ -248,8 +248,8 @@ public class MessageHandling extends Thread {
                 endMessage.setType(Type.INFORMATION);
                 Map.Entry<String, Integer> winner = getWinner(client.getGameContext().getScores());
                 endMessage.setMessage("Game End. Winner is " + winner.getKey() + ", score is " + winner.getValue());
+                notifyInGameClients(client.getGameContext(), endMessage);
                 client.setGameContext(endContext);
-                notifyInGameClients(endContext, endMessage);
                 break;
             default:
                 break;
@@ -262,7 +262,7 @@ public class MessageHandling extends Thread {
             server.getClients().get(userId).write(serverMessage);
         }
     }
-    
+
     private void notifyAllClients(ServerMessage sm) {
         Map<String, ClientConnection> clients = this.server.getClients();
         Iterator<Entry<String, ClientConnection>> entries = clients.entrySet().iterator();

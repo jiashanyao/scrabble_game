@@ -1,6 +1,5 @@
 package ass;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class Test {
@@ -28,16 +27,22 @@ public class Test {
         // sm.setTime(new Date().getTime());
         //
         // System.out.println(JsonUtility.toJson(sm));
-        List<String> users = new ArrayList<>();
-        users.add("user1");
-        users.add("user2");
-        users.add("user3");
-        users.add("user4");
-        System.out.println(users);
-        System.out.println(getNextUser(users, "user1"));
-        System.out.println(getNextUser(users, "user2"));
-        System.out.println(getNextUser(users, "user3"));
-        System.out.println(getNextUser(users, "user4"));
+        // List<String> users = new ArrayList<>();
+        // users.add("user1");
+        // users.add("user2");
+        // users.add("user3");
+        // users.add("user4");
+        // System.out.println(users);
+        // System.out.println(getNextUser(users, "user1"));
+        // System.out.println(getNextUser(users, "user2"));
+        // System.out.println(getNextUser(users, "user3"));
+        // System.out.println(getNextUser(users, "user4"));
+        String[] hi = {"", ""};
+        System.out.println(hi == null);
+        System.out.println(hi[0] == "");
+        System.out.println(hi[1] == "");
+        System.out.println(hi == null || (hi[0] == "" && hi[1] == ""));
+        System.out.println(hi);
     }
 
     private static String getNextUser(List<String> gamingUsers, String currentUser) {
