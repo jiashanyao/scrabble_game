@@ -1,17 +1,16 @@
 package ass.server;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import ass.communication.ClientMessage;
 import ass.communication.GameContext;
 import ass.communication.GameContext.GameStatus;
 import ass.communication.ServerMessage;
 import ass.communication.ServerMessage.Type;
 import ass.server.ClientConnection.ClientState;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 public class MessageHandling extends Thread {
 
@@ -21,7 +20,8 @@ public class MessageHandling extends Thread {
         this.server = server;
     }
 
-    @Override public void run() {
+    @Override
+    public void run() {
         while (true) {
             try {
                 ClientMessage clientMessage = server.getMessageQueue().take();
@@ -125,6 +125,9 @@ public class MessageHandling extends Thread {
                 break;
             }
             case CHARACTER: {
+                if (client.getClientState().equals(ClientState.PASSING)) {
+                    client.setClientState(ClientState.GAMING);
+                }
                 int x = cm.getCellX();
                 int y = cm.getCellY();
                 GameContext charContext = client.getGameContext();
@@ -154,7 +157,7 @@ public class MessageHandling extends Thread {
                 } else {
                     highContext.setGameStatus(GameStatus.VOTING);
                     highContext.setHighLight(highStr);
-                    changeClientThreadStatus(ClientState.VOTING);
+                    changeClientThreadStatus(highContext.getGamingUsers(), ClientState.VOTING);
                     ServerMessage highLightMessage = new ServerMessage(highContext);
                     highLightMessage.setType(Type.REQUEST);
                     highLightMessage.setMessage("Voting Yes/No for words");
@@ -178,13 +181,28 @@ public class MessageHandling extends Thread {
                     Map<String, Integer> scoreList = voteContext.getScores();
                     String currentUID = voteContext.getCurrentUser();
                     int currentScore = 0;
+                    int highLightNum = 0;
                     for (String highString : cm.getHighLight()) {
-                        currentScore = currentScore + highString.length();
+                        if (highString != null && highString.length() > 0) {
+                            highLightNum = highLightNum + 1;
+                        }
+                        if (highString != null) {
+                            currentScore = currentScore + highString.length();
+                        }
+
                     }
+
+                    // If highlighting a cross, the center character will be calculated twice.
+                    if (highLightNum == 2) {
+                        currentScore = currentScore - 1;
+                    }
+
                     if (scoreList.containsKey(currentUID)) {
                         currentScore = scoreList.get(currentUID) + currentScore;
                     }
                     scoreList.put(currentUID, currentScore);
+                    voteContext.setCurrentUser(getNextUser(voteContext.getGamingUsers(), voteContext.getCurrentUser()));
+                    changeClientThreadStatus(voteContext.getGamingUsers(), ClientState.GAMING);
                     client.setGameContext(voteContext);
                     ServerMessage voteMessage = new ServerMessage(voteContext);
                     notifyAllClients(voteMessage);
@@ -194,6 +212,8 @@ public class MessageHandling extends Thread {
                         voteContext.setCurrentUser(getNextUser(voteContext.getGamingUsers(), cm.getUserId()));
                         client.setGameContext(voteContext);
                         ServerMessage voteMessage = new ServerMessage(voteContext);
+                        voteMessage.setMessage(client.getUserId() + " vote false for this turn.");
+                        changeClientThreadStatus(voteContext.getGamingUsers(), ClientState.GAMING);
                         notifyAllClients(voteMessage);
                     }
                 }
@@ -206,6 +226,7 @@ public class MessageHandling extends Thread {
                 client.setGameContext(passContext);
 
                 ServerMessage passMessage = new ServerMessage(passContext);
+                passMessage.setMessage(client.getUserId() + "passed this turn.");
                 int currentUserNum = client.getGameContext().getGamingUsers().size();
                 if (countPassingNum(passContext.getGamingUsers()) != currentUserNum) {
                     notifyAllClients(passMessage);
@@ -215,7 +236,9 @@ public class MessageHandling extends Thread {
             case END:
                 GameContext endContext = new GameContext();
                 endContext.setGameStatus(GameStatus.IDLING);
+                changeClientThreadStatus(endContext.getGamingUsers(), ClientState.IDLE);
                 ServerMessage endMessage = new ServerMessage(endContext);
+                endMessage.setIdleUsers(server.getIdleUsers());
                 endMessage.setType(Type.INFORMATION);
                 Map.Entry<String, Integer> winner = getWinner(client.getGameContext().getScores());
                 endMessage.setMessage("Game End. Winner is " + winner.getKey() + ", score is " + winner.getValue());
@@ -277,7 +300,7 @@ public class MessageHandling extends Thread {
         return uid;
     }
 
-    private void changeClientThreadStatus(ClientState cType) {
+    private void changeClientThreadStatus(List<String> gamingUsers, ClientState cType) {
         Map<String, ClientConnection> clients = this.server.getClients();
         Iterator<Entry<String, ClientConnection>> entries = clients.entrySet().iterator();
         while (entries.hasNext()) {
