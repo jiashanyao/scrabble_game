@@ -70,10 +70,7 @@ public class ClientConnection extends Thread {
                                 sm.setType(ServerMessage.Type.BROADCAST);
                                 sm.setIdleUsers(server.getIdleUsers());
                                 write(sm);
-                                ServerMessage idleUserUpdate = new ServerMessage("Idle user update");
-                                idleUserUpdate.setType(ServerMessage.Type.BROADCAST);
-                                idleUserUpdate.setIdleUsers(server.getIdleUsers());
-                                writeToOthers(idleUserUpdate);
+                                server.idleUserUpdate();
                             }
                         } else {
                             server.getMessageQueue().put(cm);
@@ -82,10 +79,7 @@ public class ClientConnection extends Thread {
                     }
                     clientSocket.close();
                     server.getClients().remove(userId, thisClientConnection);
-                    ServerMessage idleUserUpdate = new ServerMessage("Idle user update");
-                    idleUserUpdate.setType(ServerMessage.Type.BROADCAST);
-                    idleUserUpdate.setIdleUsers(server.getIdleUsers());
-                    writeToOthers(idleUserUpdate);
+                    server.idleUserUpdate();
                     System.out.println(userId + "\t Connection closed.");
                 } catch (IOException e) {
                     System.out.println(userId + "\t Connection interrupted!");

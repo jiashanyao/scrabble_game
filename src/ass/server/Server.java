@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import ass.communication.ClientMessage;
+import ass.communication.ServerMessage;
 import ass.server.ClientConnection.ClientState;
 
 /**
@@ -143,4 +144,12 @@ public class Server {
         return idleUsers;
     }
 
+    public void idleUserUpdate() {
+        ServerMessage idleUserUpdate = new ServerMessage("Idle user update");
+        idleUserUpdate.setType(ServerMessage.Type.BROADCAST);
+        idleUserUpdate.setIdleUsers(getIdleUsers());
+        for (ClientConnection cc : clients.values()) {
+            cc.write(idleUserUpdate);
+        }
+    }
 }

@@ -80,10 +80,7 @@ public class MessageHandling extends Thread {
                     sm.setGameContext(gameContext);
                     sm.setIdleUsers(server.getIdleUsers());
                     client.write(sm);
-                    ServerMessage idleUserUpdate = new ServerMessage("Idle user update");
-                    idleUserUpdate.setType(ServerMessage.Type.BROADCAST);
-                    idleUserUpdate.setIdleUsers(server.getIdleUsers());
-                    notifyAllClients(idleUserUpdate);
+                    server.idleUserUpdate();
                 }
                 break;
             case INVITATION_CONFIRM:
@@ -107,10 +104,7 @@ public class MessageHandling extends Thread {
                     ClientConnection host =
                             server.getClients().get(client.getGameContext().getCurrentUser());
                     host.write(replyToHost);
-                    ServerMessage idleUserUpdate = new ServerMessage("Idle user update");
-                    idleUserUpdate.setType(ServerMessage.Type.BROADCAST);
-                    idleUserUpdate.setIdleUsers(server.getIdleUsers());
-                    notifyAllClients(idleUserUpdate);
+                    server.idleUserUpdate();
                 }
                 break;
             case START: {
@@ -237,7 +231,6 @@ public class MessageHandling extends Thread {
                 break;
         }
     }
-
 
     private void notifyAllClients(ServerMessage sm) {
         Map<String, ClientConnection> clients = this.server.getClients();
