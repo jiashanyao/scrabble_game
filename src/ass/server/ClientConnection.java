@@ -67,14 +67,11 @@ public class ClientConnection extends Thread {
                                 server.getClients().put(userId, thisClientConnection);
                                 System.out.println(userId + "\t Connection established.");
                                 ServerMessage sm = new ServerMessage(Dictionary.ID_OK);
-                                GameContext dummyGame = new GameContext();
-                                dummyGame.setGameStatus(GameContext.GameStatus.IDLING);
-                                sm.setGameContext(dummyGame);
-                                sm.setType(ServerMessage.Type.INFORMATION);
+                                sm.setType(ServerMessage.Type.BROADCAST);
                                 sm.setIdleUsers(server.getIdleUsers());
                                 write(sm);
                                 ServerMessage idleUserUpdate = new ServerMessage("Idle user update");
-                                idleUserUpdate.setType(ServerMessage.Type.INFORMATION);
+                                idleUserUpdate.setType(ServerMessage.Type.BROADCAST);
                                 idleUserUpdate.setIdleUsers(server.getIdleUsers());
                                 writeToOthers(idleUserUpdate);
                             }
@@ -86,7 +83,7 @@ public class ClientConnection extends Thread {
                     clientSocket.close();
                     server.getClients().remove(userId, thisClientConnection);
                     ServerMessage idleUserUpdate = new ServerMessage("Idle user update");
-                    idleUserUpdate.setType(ServerMessage.Type.INFORMATION);
+                    idleUserUpdate.setType(ServerMessage.Type.BROADCAST);
                     idleUserUpdate.setIdleUsers(server.getIdleUsers());
                     writeToOthers(idleUserUpdate);
                     System.out.println(userId + "\t Connection closed.");

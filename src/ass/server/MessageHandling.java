@@ -81,7 +81,7 @@ public class MessageHandling extends Thread {
                     sm.setIdleUsers(server.getIdleUsers());
                     client.write(sm);
                     ServerMessage idleUserUpdate = new ServerMessage("Idle user update");
-                    idleUserUpdate.setType(ServerMessage.Type.INFORMATION);
+                    idleUserUpdate.setType(ServerMessage.Type.BROADCAST);
                     idleUserUpdate.setIdleUsers(server.getIdleUsers());
                     notifyAllClients(idleUserUpdate);
                 }
@@ -108,7 +108,7 @@ public class MessageHandling extends Thread {
                             server.getClients().get(client.getGameContext().getCurrentUser());
                     host.write(replyToHost);
                     ServerMessage idleUserUpdate = new ServerMessage("Idle user update");
-                    idleUserUpdate.setType(ServerMessage.Type.INFORMATION);
+                    idleUserUpdate.setType(ServerMessage.Type.BROADCAST);
                     idleUserUpdate.setIdleUsers(server.getIdleUsers());
                     notifyAllClients(idleUserUpdate);
                 }
