@@ -53,12 +53,12 @@ public class DummyClient {
             if (output.equals("yes")) {
                 cm.setType(Type.INVITATION_CONFIRM);
                 cm.setUserId(userId);
-                cm.setResponse(true);
+                cm.setAccept(true);
             }
             if (output.equals("no")) {
                 cm.setType(Type.INVITATION_CONFIRM);
                 cm.setUserId(userId);
-                cm.setResponse(false);
+                cm.setAccept(false);
             }
             json = JsonUtility.toJson(cm);
             try {

@@ -623,7 +623,8 @@ public class ClientConsole extends JFrame {
                                                             break;
                                                         case INVITING:
                                                         case VOTING:
-                                                            clientMessage.setResponse(true);
+                                                            clientMessage.setHighLight(gameContext.getHighLight());
+                                                            clientMessage.setAccept(true);
                                                             writer.write(JsonUtility.toJson(clientMessage) + "\n");
                                                             writer.flush();
                                                             break;
@@ -633,7 +634,7 @@ public class ClientConsole extends JFrame {
                                                     }
 
                                                 } else {
-                                                    clientMessage.setResponse(false);
+                                                    clientMessage.setAccept(false);
                                                     writer.write(JsonUtility.toJson(clientMessage) + "\n");
                                                     writer.flush();
                                                 }

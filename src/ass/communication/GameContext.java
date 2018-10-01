@@ -3,6 +3,7 @@ package ass.communication;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class GameContext {
 
@@ -26,6 +27,7 @@ public class GameContext {
 
     public GameContext() {
         this.gameBoard = new String[20][20];
+        this.scores = new ConcurrentHashMap<String, Integer>();
         this.gamingUsers = new ArrayList<>();
         this.invitedUser = new ArrayList<>();
     }

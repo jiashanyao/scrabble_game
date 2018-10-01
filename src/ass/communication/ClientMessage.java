@@ -10,8 +10,6 @@ public class ClientMessage {
 
     private boolean accept;
 
-    private Boolean response;
-
     private Integer cellX;
 
     private Integer cellY;
@@ -47,12 +45,12 @@ public class ClientMessage {
         this.invitations = invitations;
     }
 
-    public Boolean getResponse() {
-        return response;
+    public boolean isAccept() {
+        return accept;
     }
 
-    public void setResponse(Boolean response) {
-        this.response = response;
+    public void setAccept(boolean accept) {
+        this.accept = accept;
     }
 
     public Integer getCellX() {
@@ -85,14 +83,6 @@ public class ClientMessage {
 
     public void setHighLight(String[] highLight) {
         this.highLight = highLight;
-    }
-
-    public boolean isAccept() {
-        return accept;
-    }
-
-    public void setResponse(boolean response) {
-        this.accept = response;
     }
 
     public enum Type {
