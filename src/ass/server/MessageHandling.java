@@ -166,6 +166,13 @@ public class MessageHandling extends Thread {
                 break;
             }
             case VOTE: {
+                if (client.getClientState().equals(ClientState.GAMING)) {
+                    ServerMessage sMessage = new ServerMessage(client.getGameContext());
+                    sMessage.setMessage("Voting finished already.");
+                    client.write(sMessage);
+                    break;
+                }
+
                 client.setClientState(ClientState.GAMING);
                 GameContext voteContext = client.getGameContext();
                 Map<String, ClientConnection> clients = this.server.getClients();
@@ -175,9 +182,18 @@ public class MessageHandling extends Thread {
                         voteNum++;
                     }
                 }
-                if (voteNum == voteContext.getGamingUsers().size()) {
+
+                if (!cm.isAccept()) {
                     voteContext.setGameStatus(GameStatus.GAMING);
-                    voteContext.setCurrentUser(getNextUser(voteContext.getGamingUsers(), cm.getUserId()));
+                    voteContext.setCurrentUser(getNextUser(voteContext.getGamingUsers(), voteContext.getCurrentUser()));
+                    client.setGameContext(voteContext);
+                    ServerMessage voteMessage = new ServerMessage(voteContext);
+                    voteMessage.setMessage(client.getUserId() + " vote false for this turn.");
+                    changeClientThreadStatus(voteContext.getGamingUsers(), ClientState.GAMING);
+                    notifyAllClients(voteMessage);
+                    break;
+                } else if (voteNum == voteContext.getGamingUsers().size()) {
+                    voteContext.setGameStatus(GameStatus.GAMING);
                     Map<String, Integer> scoreList = voteContext.getScores();
                     String currentUID = voteContext.getCurrentUser();
                     int currentScore = 0;
@@ -206,23 +222,13 @@ public class MessageHandling extends Thread {
                     client.setGameContext(voteContext);
                     ServerMessage voteMessage = new ServerMessage(voteContext);
                     notifyAllClients(voteMessage);
-                } else {
-                    if (!cm.isAccept()) {
-                        voteContext.setGameStatus(GameStatus.GAMING);
-                        voteContext.setCurrentUser(getNextUser(voteContext.getGamingUsers(), cm.getUserId()));
-                        client.setGameContext(voteContext);
-                        ServerMessage voteMessage = new ServerMessage(voteContext);
-                        voteMessage.setMessage(client.getUserId() + " vote false for this turn.");
-                        changeClientThreadStatus(voteContext.getGamingUsers(), ClientState.GAMING);
-                        notifyAllClients(voteMessage);
-                    }
                 }
                 break;
             }
             case PASS: {
                 client.setClientState(ClientState.PASSING);
                 GameContext passContext = client.getGameContext();
-                passContext.setCurrentUser(getNextUser(passContext.getGamingUsers(), cm.getUserId()));
+                passContext.setCurrentUser(getNextUser(passContext.getGamingUsers(), passContext.getCurrentUser()));
                 client.setGameContext(passContext);
 
                 ServerMessage passMessage = new ServerMessage(passContext);
@@ -288,15 +294,16 @@ public class MessageHandling extends Thread {
 
     private String getNextUser(List<String> gamingUsers, String currentUser) {
         List<String> userList = gamingUsers;
-        String uid = currentUser;
-        if (userList.contains(uid)) {
-            int i = userList.indexOf(uid);
+        String uid = "";
+        if (userList.contains(currentUser)) {
+            int i = userList.indexOf(currentUser);
             if (i < userList.size() - 1) {
                 uid = userList.get(i + 1);
             } else {
                 uid = userList.get(0);
             }
         }
+        System.out.println("current: " + currentUser + " , next: " + uid);
         return uid;
     }
 
