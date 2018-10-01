@@ -18,6 +18,7 @@ public class MessageHandling extends Thread {
 
     public MessageHandling(Server server) {
         this.server = server;
+        super.setName(this.getClass().getName());
     }
 
     @Override
@@ -25,6 +26,7 @@ public class MessageHandling extends Thread {
         while (true) {
             try {
                 ClientMessage clientMessage = server.getMessageQueue().take();
+                System.out.println("took a message from queue");
                 messageHandle(clientMessage);
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
@@ -93,12 +95,14 @@ public class MessageHandling extends Thread {
                     sm.setGameContext(client.getGameContext());
                     sm.setIdleUsers(server.getIdleUsers());
                     client.write(sm);
-                    ServerMessage replyToHost = new ServerMessage(client.getUserId() + " has joined your game.");
-                    replyToHost.setType(Type.INFORMATION);
-                    replyToHost.setGameContext(client.getGameContext());
-                    replyToHost.setIdleUsers(server.getIdleUsers());
-                    ClientConnection host = server.getClients().get(client.getGameContext().getCurrentUser());
-                    host.write(replyToHost);
+                    ServerMessage toGameRelatedUsers = new ServerMessage(client.getUserId() + " has joined game.");
+                    toGameRelatedUsers.setType(Type.INFORMATION);
+                    toGameRelatedUsers.setGameContext(client.getGameContext());
+                    toGameRelatedUsers.setIdleUsers(server.getIdleUsers());
+                    for (String userId : client.getGameContext().getInvitedUser()) {
+                        server.getClients().get(userId).write(toGameRelatedUsers);
+                    }
+                    server.getClients().get(client.getGameContext().getCurrentUser()).write(toGameRelatedUsers);
                     server.idleUserUpdate();
                 }
                 break;

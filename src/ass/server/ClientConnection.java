@@ -79,6 +79,11 @@ public class ClientConnection extends Thread {
                     }
                     clientSocket.close();
                     server.getClients().remove(userId, thisClientConnection);
+                    for (ClientMessage cm : server.getMessageQueue()) {
+                        // remove the message sent by the user if he exits to prevent messing up message handling
+                        if (cm.getUserId().equals(userId))
+                            server.getMessageQueue().remove(cm);                            
+                    }
                     server.idleUserUpdate();
                     System.out.println(userId + "\t Connection closed.");
                 } catch (IOException e) {
