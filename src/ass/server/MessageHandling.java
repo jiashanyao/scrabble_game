@@ -248,7 +248,8 @@ public class MessageHandling extends Thread {
                 endMessage.setType(Type.INFORMATION);
                 Map.Entry<String, Integer> winner = getWinner(client.getGameContext().getScores());
                 endMessage.setMessage("Game End. Winner is " + winner.getKey() + ", score is " + winner.getValue());
-                notifyInGameClients(client.getGameContext(), endMessage);
+                notifyAllClients(endMessage);
+                server.idleUserUpdate();
                 client.setGameContext(endContext);
                 break;
             default:
