@@ -90,11 +90,6 @@ public class MessageHandling extends Thread {
                     // invitation
                     client.setClientState(ClientState.INVITING); // after joining, he can invite
                     // other users as well
-                    ServerMessage sm = new ServerMessage("You are in the game.");
-                    sm.setType(Type.INFORMATION);
-                    sm.setGameContext(client.getGameContext());
-                    sm.setIdleUsers(server.getIdleUsers());
-                    client.write(sm);
                     ServerMessage toGameRelatedUsers = new ServerMessage(client.getUserId() + " has joined game.");
                     /* update Playing Players list */
                     toGameRelatedUsers.setType(Type.INFORMATION);
@@ -249,15 +244,17 @@ public class MessageHandling extends Thread {
             case END:
                 GameContext endContext = new GameContext();
                 endContext.setGameStatus(GameStatus.IDLING);
-                changeClientThreadStatus(endContext.getGamingUsers(), ClientState.IDLE);
                 ServerMessage endMessage = new ServerMessage(endContext);
                 endMessage.setIdleUsers(server.getIdleUsers());
                 endMessage.setType(Type.INFORMATION);
                 Map.Entry<String, Integer> winner = getWinner(client.getGameContext().getScores());
                 endMessage.setMessage("Game End. Winner is " + winner.getKey() + ", score is " + winner.getValue());
-                notifyAllClients(endMessage);
+                for (String userId : client.getGameContext().getGamingUsers()) {
+                    server.getClients().get(userId).write(endMessage);
+                }
+                changeClientThreadStatus(client.getGameContext().getGamingUsers(), ClientState.IDLE);
                 server.idleUserUpdate();
-                client.setGameContext(endContext);
+                client.setGameContext(null);
                 break;
             default:
                 break;
@@ -327,7 +324,9 @@ public class MessageHandling extends Thread {
         Iterator<Entry<String, ClientConnection>> entries = clients.entrySet().iterator();
         while (entries.hasNext()) {
             Map.Entry<String, ClientConnection> tClient = entries.next();
-            tClient.getValue().setClientState(cType);
+            if (gamingUsers.contains(tClient.getKey())) {
+                tClient.getValue().setClientState(cType);
+            }
         }
     }
 
