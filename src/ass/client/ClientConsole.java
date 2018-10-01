@@ -6,6 +6,7 @@ import ass.communication.ClientMessage;
 import ass.communication.GameContext;
 import ass.communication.JsonUtility;
 import ass.communication.ServerMessage;
+import com.sun.org.apache.xpath.internal.SourceTree;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
@@ -218,8 +219,7 @@ public class ClientConsole extends JFrame {
         gbc_idelPlayerList.gridy = 2;
         idlePlayerList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-        DefaultListModel<String> listModel = new DefaultListModel<String>();
-        idlePlayerList.setModel(listModel);
+        idlePlayerList.setModel(new DefaultListModel<String>());
 
         JScrollPane listScrollPane = new JScrollPane(idlePlayerList);
         GridBagConstraints gbc_listScrollPane = new GridBagConstraints();
@@ -466,19 +466,15 @@ public class ClientConsole extends JFrame {
                     int char_col = gameContext.getCellY();
                     int x = gameTable.rowAtPoint(me.getPoint());
                     int y = gameTable.columnAtPoint(me.getPoint());
+                    int[][] highlightRange = null;
                     int[] highlighRangeCols = null;
                     int[] highlighRangeRols = null;
                     String[] highlighStr = null;
 
                     if (x == char_row || y == char_col) {
-                        if (x == char_row) {
-                            highlighRangeCols = HighlightRender.getHighlightRange(gameTable, char_row, char_col, 0);
-                        }
-                        if (y == char_col) {
-                            highlighRangeRols = HighlightRender.getHighlightRange(gameTable, char_row, char_col, 1);
-                        }
 
-                        highlighStr = getHighlightString(highlighRangeCols, highlighRangeRols, char_row, char_col);
+                        highlightRange = HighlightRender.selectHighlightRange(gameTable, char_row, char_col, x, y);
+                        highlighStr = getHighlightString(highlightRange[0], highlightRange[1], char_row, char_col);
 
                         // ClientMessage setting
                         ClientMessage cm = new ClientMessage();
@@ -522,7 +518,9 @@ public class ClientConsole extends JFrame {
                                 } else if (ServerMessage.Type.BROADCAST.equals(type)) {
                                     GameContext invitingContext = headMessage.getGameContext();
                                     //update idle users
-                                    listModel.clear();
+                                    //TODO monitor here
+                                    System.out.println("Renew listModel");
+                                    DefaultListModel<String> listModel = new DefaultListModel<String>();
                                     List<String> invitedUsers =
                                         null != invitingContext && null != invitingContext.getInvitedUser() ? invitingContext.getInvitedUser() : new ArrayList<>();
                                     for (String user : headMessage.getIdleUsers()) {
@@ -580,24 +578,39 @@ public class ClientConsole extends JFrame {
                                             btnEndGame.setEnabled(false);
                                             break;
                                         case GAMING:
-                                            List<String> players = gameContext.getGamingUsers();
-                                            if (players.contains(userId) && userId.equals(currentPlayer)) {
+                                            if (userId.equals(currentPlayer)) {
                                                 gameTable.setEnabled(true);
+                                                btnPass.setEnabled(true);
                                             } else {
                                                 gameTable.setEnabled(false);
+                                                btnPass.setEnabled(false);
                                             }
                                             btnInvite.setEnabled(false);
                                             btnStartGame.setEnabled(false);
-                                            btnPass.setEnabled(true);
                                             btnEndGame.setEnabled(true);
                                             break;
                                         case HIGHLIGHT:
+                                            gameTable.setEnabled(false);
+                                            btnInvite.setEnabled(false);
+                                            btnStartGame.setEnabled(false);
+                                            if (userId.equals(currentPlayer)) {
+                                                btnPass.setEnabled(true);
+                                            } else {
+                                                btnPass.setEnabled(false);
+                                            }
+                                            btnEndGame.setEnabled(true);
+                                            break;
                                         case VOTING:
                                             gameTable.setEnabled(false);
                                             btnInvite.setEnabled(false);
                                             btnStartGame.setEnabled(false);
-                                            btnPass.setEnabled(true);
+                                            if (userId.equals(currentPlayer)) {
+                                                btnPass.setEnabled(true);
+                                            } else {
+                                                btnPass.setEnabled(false);
+                                            }
                                             btnEndGame.setEnabled(true);
+                                            HighlightRender.displayHighlightString(gameTable, gameContext.getCellX(), gameContext.getCellY(), gameContext.getHighLight());
                                             break;
                                         default:
                                             throw new IllegalArgumentException("Game status miss match");
@@ -635,6 +648,11 @@ public class ClientConsole extends JFrame {
                                                     }
 
                                                 } else {
+                                                    switch (status) {
+                                                        case HIGHLIGHT:
+                                                            clientMessage.setHighLight(new String[]{"",""});
+                                                            break;
+                                                    }
                                                     clientMessage.setAccept(false);
                                                     writer.write(JsonUtility.toJson(clientMessage) + "\n");
                                                     writer.flush();
@@ -664,27 +682,37 @@ public class ClientConsole extends JFrame {
         backgroundThread.start();
     }
 
-    private String[] getHighlightString(int[] rangeOfCol, int[] rangeOfRow, int char_row, int char_col) {
+    /**
+     * get the highlight string according to axis of character
+     * if just one character, it will be set as row.
+     * @param cellsOfRow
+     * @param cellsOfCol
+     * @param char_row
+     * @param char_col
+     * @return
+     */
+    private String[] getHighlightString(int[] cellsOfRow, int[] cellsOfCol, int char_row, int char_col) {
         String[] result = new String[2];
-
         // same row
-        if (rangeOfCol != null) {
+        if (cellsOfRow != null) {
             String rowStr = "";
-            for (int i = rangeOfCol[0]; i <= rangeOfCol[1]; i++) {
+            for (int i = cellsOfRow[0]; i <= cellsOfRow[1]; i++) {
                 rowStr = rowStr + (String) gameTable.getModel().getValueAt(char_row, i);
             }
             result[0] = rowStr;
+        } else {
+            result[0] = "";
         }
         // same column
-        if (rangeOfRow != null) {
+        if (cellsOfCol != null) {
             String colStr = "";
-            for (int i = rangeOfRow[0]; i <= rangeOfRow[1]; i++) {
+            for (int i = cellsOfCol[0]; i <= cellsOfCol[1]; i++) {
                 colStr = colStr + (String) gameTable.getModel().getValueAt(i, char_col);
             }
             result[1] = colStr;
+        } else {
+            result[1] = "";
         }
-
         return result;
     }
-
 }
