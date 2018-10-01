@@ -1,7 +1,6 @@
 package ass.client;
 
 import ass.communication.ServerMessage;
-import sun.misc.Queue;
 
 import java.util.concurrent.LinkedBlockingQueue;
 
