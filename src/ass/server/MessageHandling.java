@@ -96,12 +96,15 @@ public class MessageHandling extends Thread {
                     sm.setIdleUsers(server.getIdleUsers());
                     client.write(sm);
                     ServerMessage toGameRelatedUsers = new ServerMessage(client.getUserId() + " has joined game.");
+                    /* update Playing Players list */
                     toGameRelatedUsers.setType(Type.INFORMATION);
                     toGameRelatedUsers.setGameContext(client.getGameContext());
                     toGameRelatedUsers.setIdleUsers(server.getIdleUsers());
+                    // send to invited users
                     for (String userId : client.getGameContext().getInvitedUser()) {
                         server.getClients().get(userId).write(toGameRelatedUsers);
                     }
+                    // send to host
                     server.getClients().get(client.getGameContext().getCurrentUser()).write(toGameRelatedUsers);
                     server.idleUserUpdate();
                 }
