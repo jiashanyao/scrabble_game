@@ -1,23 +1,13 @@
 package ass.client;
 
 import ass.communication.ServerMessage;
+import sun.misc.Queue;
 
-import java.util.Comparator;
-import java.util.Date;
-import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
-public class ClientContext extends PriorityBlockingQueue<ServerMessage> {
+public class ClientContext extends LinkedBlockingQueue<ServerMessage> {
 
     private Long currentVersion;
-
-    public ClientContext() {
-        super(1, new Comparator<ServerMessage>() {
-            @Override public int compare(ServerMessage o1, ServerMessage o2) {
-                return Math.toIntExact(o2.getTime() - o1.getTime());
-            }
-        });
-        this.currentVersion = new Date().getTime();
-    }
 
     public Long getCurrentVersion() {
         return currentVersion;
