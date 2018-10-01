@@ -120,7 +120,7 @@ public class MessageHandling extends Thread {
                     startInformation.setIdleUsers(server.getIdleUsers());
                     startInformation.setType(Type.INFORMATION);
                     startInformation.setMessage("Game Start!");
-                    notifyAllClients(startInformation);
+                    notifyInGameClients(startContext, startInformation);
                 }
                 break;
             }
@@ -153,7 +153,7 @@ public class MessageHandling extends Thread {
                     highContext.setCurrentUser(currentUser);
                     ServerMessage highLightMessage = new ServerMessage(highContext);
                     highLightMessage.setMessage("Now it is " + currentUser + "'s turn");
-                    notifyAllClients(highLightMessage);
+                    notifyInGameClients(highContext, highLightMessage);
                 } else {
                     highContext.setGameStatus(GameStatus.VOTING);
                     highContext.setHighLight(highStr);
@@ -161,7 +161,7 @@ public class MessageHandling extends Thread {
                     ServerMessage highLightMessage = new ServerMessage(highContext);
                     highLightMessage.setType(Type.REQUEST);
                     highLightMessage.setMessage("Voting Yes/No for words");
-                    notifyAllClients(highLightMessage);
+                    notifyInGameClients(highContext, highLightMessage);
                 }
                 break;
             }
@@ -190,7 +190,7 @@ public class MessageHandling extends Thread {
                     ServerMessage voteMessage = new ServerMessage(voteContext);
                     voteMessage.setMessage(client.getUserId() + " vote false for this turn.");
                     changeClientThreadStatus(voteContext.getGamingUsers(), ClientState.GAMING);
-                    notifyAllClients(voteMessage);
+                    notifyInGameClients(voteContext, voteMessage);
                     break;
                 } else if (voteNum == voteContext.getGamingUsers().size()) {
                     voteContext.setGameStatus(GameStatus.GAMING);
@@ -221,7 +221,7 @@ public class MessageHandling extends Thread {
                     changeClientThreadStatus(voteContext.getGamingUsers(), ClientState.GAMING);
                     client.setGameContext(voteContext);
                     ServerMessage voteMessage = new ServerMessage(voteContext);
-                    notifyAllClients(voteMessage);
+                    notifyInGameClients(voteContext, voteMessage);
                 }
                 break;
             }
@@ -235,7 +235,7 @@ public class MessageHandling extends Thread {
                 passMessage.setMessage(client.getUserId() + "passed this turn.");
                 int currentUserNum = client.getGameContext().getGamingUsers().size();
                 if (countPassingNum(passContext.getGamingUsers()) != currentUserNum) {
-                    notifyAllClients(passMessage);
+                    notifyInGameClients(passContext, passMessage);
                     break;
                 }
             }
@@ -249,13 +249,20 @@ public class MessageHandling extends Thread {
                 Map.Entry<String, Integer> winner = getWinner(client.getGameContext().getScores());
                 endMessage.setMessage("Game End. Winner is " + winner.getKey() + ", score is " + winner.getValue());
                 client.setGameContext(endContext);
-                notifyAllClients(endMessage);
+                notifyInGameClients(endContext, endMessage);
                 break;
             default:
                 break;
         }
     }
 
+    private void notifyInGameClients(GameContext gameContext, ServerMessage serverMessage) {
+        List<String> gamingUsers = gameContext.getGamingUsers();
+        for (String userId : gamingUsers) {
+            server.getClients().get(userId).write(serverMessage);
+        }
+    }
+    
     private void notifyAllClients(ServerMessage sm) {
         Map<String, ClientConnection> clients = this.server.getClients();
         Iterator<Entry<String, ClientConnection>> entries = clients.entrySet().iterator();
