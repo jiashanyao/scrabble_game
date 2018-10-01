@@ -15,4 +15,5 @@ public final class Dictionary {
 	public final static String MSG_WELCOME = "Welcome to Scrbble Game";
 	public final static String LBL_IDLE_PLY = "Idle Players";
 	public final static String LBL_PLY_PLY = "Playing Players";
+	public final static String NOT_INVITE_SELF = "Please invite other players.";
 }
