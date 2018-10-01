@@ -89,6 +89,7 @@ public class ClientMessage {
         SYNC, INVITATION, INVITATION_CONFIRM, START, CHARACTER, HIGHLIGHT, VOTE, PASS, END
     }
 
+    @Override
     public String toString() {
         return JsonUtility.toJson(this);
     }
