@@ -25,8 +25,9 @@ public class GameContext {
     private Map<String, Integer> scores;
 
     public GameContext() {
-        gamingUsers = new ArrayList<>();
-        invitedUser = new ArrayList<>();
+        this.gameBoard = new String[20][20];
+        this.gamingUsers = new ArrayList<>();
+        this.invitedUser = new ArrayList<>();
     }
 
     public GameStatus getGameStatus() {
