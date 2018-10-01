@@ -325,23 +325,30 @@ public class ClientConsole extends JFrame {
                     lblMessageArea.setText(Dictionary.MORE_THAN_ONE_PLAYER);
                     lblMessageArea.setForeground(Color.RED);
                 } else {
-                    // ClientMessage setting
                     String[] selectedIdlePlayers = idlePlayerList.getSelectedValuesList().stream().toArray(String[]::new);
                     for (String item : selectedIdlePlayers) {
                         item = item.replaceAll("\\s\\(.*", "");
                     }
-                    ClientMessage cm = new ClientMessage();
-                    cm.setType(ClientMessage.Type.INVITATION);
-                    cm.setUserId(username);
-                    cm.setInvitations(selectedIdlePlayers);
-
-                    try {
-                        writer.write(JsonUtility.toJson(cm) + "\n");
-                        writer.flush();
-                    } catch (IOException e1) {
-                        lblMessageArea.setText(e1.getMessage());
+                    // validation: cannot invite self
+                    List<String> list = Arrays.asList(selectedIdlePlayers);
+                    if (list.contains(username)) {
+                        lblMessageArea.setText(Dictionary.NOT_INVITE_SELF);
                         lblMessageArea.setForeground(Color.RED);
-                        e1.printStackTrace();
+                    } else {
+                        // ClientMessage setting
+                        ClientMessage cm = new ClientMessage();
+                        cm.setType(ClientMessage.Type.INVITATION);
+                        cm.setUserId(username);
+                        cm.setInvitations(selectedIdlePlayers);
+
+                        try {
+                            writer.write(JsonUtility.toJson(cm) + "\n");
+                            writer.flush();
+                        } catch (IOException e1) {
+                            lblMessageArea.setText(e1.getMessage());
+                            lblMessageArea.setForeground(Color.RED);
+                            e1.printStackTrace();
+                        }
                     }
                 }
             }
