@@ -446,6 +446,7 @@ public class ClientConsole extends JFrame {
                             try {
                                 writer.write(JsonUtility.toJson(cm) + "\n");
                                 writer.flush();
+                                gameTable.setEnabled(false);
                             } catch (IOException e1) {
                                 lblMessageArea.setText(e1.getMessage());
                                 lblMessageArea.setForeground(Color.RED);
