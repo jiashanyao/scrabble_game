@@ -160,10 +160,11 @@ public class MessageHandling extends Thread {
                     highContext.setGameStatus(GameStatus.VOTING);
                     highContext.setHighLight(highStr);
                     changeClientThreadStatus(highContext.getGamingUsers(), ClientState.VOTING);
+                    client.setClientState(ClientState.GAMING);
                     ServerMessage highLightMessage = new ServerMessage(highContext);
                     highLightMessage.setType(Type.REQUEST);
                     highLightMessage.setMessage("Voting Yes/No for words");
-                    notifyInGameClients(highContext, highLightMessage);
+                    notifyOtherGamingUser(highContext.getCurrentUser(), highContext, highLightMessage);
                 }
                 break;
             }
@@ -266,6 +267,22 @@ public class MessageHandling extends Thread {
         for (String userId : gamingUsers) {
             server.getClients().get(userId).write(serverMessage);
         }
+    }
+
+    /**
+     * 
+     * @param userID CurrentUser ID
+     * @param gameContext
+     * @param serverMessage
+     */
+    private void notifyOtherGamingUser(String userID, GameContext gameContext, ServerMessage serverMessage) {
+        List<String> gamingUserList = gameContext.getGamingUsers();
+        for (String uid : gamingUserList) {
+            if (!uid.equals(userID)) {
+                server.getClients().get(uid).write(serverMessage);
+            }
+        }
+
     }
 
     private void notifyAllClients(ServerMessage sm) {
