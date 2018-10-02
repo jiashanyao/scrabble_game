@@ -589,7 +589,7 @@ public class ClientConsole extends JFrame {
                                 //update players table
                                 Object[][] playerModel;
                                 List<String> gamingUsers = gameContext.getGamingUsers();
-                                if (gamingUsers.contains(userId)) {
+                                if (gamingUsers.contains(userId) || status == GameStatus.IDLING) {  // when gaming or game ends
                                     Map<String, Integer> scoresMap = null != gameContext.getScores() ? gameContext.getScores() : new HashMap<String, Integer>();
                                     if (null != gamingUsers && gamingUsers.size() > 0) {
 
@@ -607,10 +607,6 @@ public class ClientConsole extends JFrame {
                                     }
                                     playerTable.setModel(
                                             new DefaultTableModel(playerModel, plColumnNames));
-                                }
-                                if (status == GameStatus.IDLING) {  // empty player table
-                                    playerTable.setModel(
-                                            new DefaultTableModel());
                                 }
 
                                 //update button status
