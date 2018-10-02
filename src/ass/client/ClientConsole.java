@@ -4,6 +4,7 @@ import ass.client.highlight.HighlightListener;
 import ass.client.highlight.HighlightRender;
 import ass.communication.ClientMessage;
 import ass.communication.GameContext;
+import ass.communication.GameContext.GameStatus;
 import ass.communication.JsonUtility;
 import ass.communication.ServerMessage;
 import org.apache.commons.lang3.StringUtils;
@@ -589,9 +590,7 @@ public class ClientConsole extends JFrame {
                                 Object[][] playerModel;
                                 List<String> gamingUsers = gameContext.getGamingUsers();
                                 if (gamingUsers.contains(userId)) {
-                                    Map<String, Integer> scoresMap = null != gameContext.getScores()
-                                            ? gameContext.getScores()
-                                            : new HashMap<String, Integer>();
+                                    Map<String, Integer> scoresMap = null != gameContext.getScores() ? gameContext.getScores() : new HashMap<String, Integer>();
                                     if (null != gamingUsers && gamingUsers.size() > 0) {
 
                                         int index = 0;
@@ -599,12 +598,8 @@ public class ClientConsole extends JFrame {
                                         // System.out.println("Gaming size:" + gamingUsers.size());
                                         for (String userId : gamingUsers) {
                                             playerModel[index][0] = userId;
-                                            playerModel[index][1] = userId.equals(currentPlayer)
-                                                    ? "playing"
-                                                    : "";
-                                            playerModel[index][2] = null == scoresMap.get(userId)
-                                                    ? ""
-                                                    : scoresMap.get(userId);
+                                            playerModel[index][1] = userId.equals(currentPlayer) ? "playing" : "";
+                                            playerModel[index][2] = null == scoresMap.get(userId) ? "" : scoresMap.get(userId);
                                             index++;
                                         }
                                     } else {
@@ -612,6 +607,10 @@ public class ClientConsole extends JFrame {
                                     }
                                     playerTable.setModel(
                                             new DefaultTableModel(playerModel, plColumnNames));
+                                }
+                                if (status == GameStatus.IDLING) {  // empty player table
+                                    playerTable.setModel(
+                                            new DefaultTableModel());
                                 }
 
                                 //update button status
