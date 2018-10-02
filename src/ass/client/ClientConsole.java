@@ -320,6 +320,9 @@ public class ClientConsole extends JFrame {
          */
         btnInvite.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                // Clear MessageArea
+                lblMessageArea.setText("");
+
                 if (idlePlayerList.isSelectionEmpty()) {
                     lblMessageArea.setText(Dictionary.MORE_THAN_ONE_PLAYER);
                     lblMessageArea.setForeground(Color.RED);
@@ -355,6 +358,9 @@ public class ClientConsole extends JFrame {
 
         btnStartGame.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                // Clear MessageArea
+                lblMessageArea.setText("");
+
                 // ClientMessage setting
                 ClientMessage cm = new ClientMessage();
                 cm.setType(ClientMessage.Type.START);
@@ -372,6 +378,9 @@ public class ClientConsole extends JFrame {
 
         btnPass.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                // Clear MessageArea
+                lblMessageArea.setText("");
+
                 // ClientMessage setting
                 ClientMessage cm = new ClientMessage();
                 cm.setType(ClientMessage.Type.PASS);
@@ -389,6 +398,9 @@ public class ClientConsole extends JFrame {
 
         btnEndGame.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                // Clear MessageArea
+                lblMessageArea.setText("");
+
                 // ClientMessage setting
                 ClientMessage cm = new ClientMessage();
                 cm.setType(ClientMessage.Type.END);
@@ -406,6 +418,9 @@ public class ClientConsole extends JFrame {
 
         gameTable.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent me) {
+                // Clear MessageArea
+                lblMessageArea.setText("");
+
                 // when gameTable is enable, pop-up choose character dialog
                 if (gameTable.isEnabled()) {
                     int x = gameTable.rowAtPoint(me.getPoint());
