@@ -588,22 +588,31 @@ public class ClientConsole extends JFrame {
                                 //update players table
                                 Object[][] playerModel;
                                 List<String> gamingUsers = gameContext.getGamingUsers();
-                                Map<String, Integer> scoresMap = null != gameContext.getScores() ? gameContext.getScores() : new HashMap<String, Integer>();
-                                if (null != gamingUsers && gamingUsers.size() > 0) {
+                                if (gamingUsers.contains(userId)) {
+                                    Map<String, Integer> scoresMap = null != gameContext.getScores()
+                                            ? gameContext.getScores()
+                                            : new HashMap<String, Integer>();
+                                    if (null != gamingUsers && gamingUsers.size() > 0) {
 
-                                    int index = 0;
-                                    playerModel = new Object[gamingUsers.size()][3];
-                                    //System.out.println("Gaming size:" + gamingUsers.size());
-                                    for (String userId : gamingUsers) {
-                                        playerModel[index][0] = userId;
-                                        playerModel[index][1] = userId.equals(currentPlayer) ? "playing" : "";
-                                        playerModel[index][2] = null == scoresMap.get(userId) ? "" : scoresMap.get(userId);
-                                        index++;
+                                        int index = 0;
+                                        playerModel = new Object[gamingUsers.size()][3];
+                                        // System.out.println("Gaming size:" + gamingUsers.size());
+                                        for (String userId : gamingUsers) {
+                                            playerModel[index][0] = userId;
+                                            playerModel[index][1] = userId.equals(currentPlayer)
+                                                    ? "playing"
+                                                    : "";
+                                            playerModel[index][2] = null == scoresMap.get(userId)
+                                                    ? ""
+                                                    : scoresMap.get(userId);
+                                            index++;
+                                        }
+                                    } else {
+                                        playerModel = new Object[][] {};
                                     }
-                                } else {
-                                    playerModel = new Object[][] {};
+                                    playerTable.setModel(
+                                            new DefaultTableModel(playerModel, plColumnNames));
                                 }
-                                playerTable.setModel(new DefaultTableModel(playerModel, plColumnNames));
 
                                 //update button status
                                 switch (status) {

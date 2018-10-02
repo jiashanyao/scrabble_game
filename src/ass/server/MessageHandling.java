@@ -90,17 +90,17 @@ public class MessageHandling extends Thread {
                     // invitation
                     client.setClientState(ClientState.INVITING); // after joining, he can invite
                     // other users as well
-                    ServerMessage toGameRelatedUsers = new ServerMessage(client.getUserId() + " has joined game.");
+                    ServerMessage toInGameUsers = new ServerMessage(client.getUserId() + " has joined game.");
                     /* update Playing Players list */
-                    toGameRelatedUsers.setType(Type.INFORMATION);
-                    toGameRelatedUsers.setGameContext(client.getGameContext());
-                    toGameRelatedUsers.setIdleUsers(server.getIdleUsers());
-                    // send to invited users
-                    for (String userId : client.getGameContext().getInvitedUser()) {
-                        server.getClients().get(userId).write(toGameRelatedUsers);
+                    toInGameUsers.setType(Type.INFORMATION);
+                    toInGameUsers.setGameContext(client.getGameContext());
+                    toInGameUsers.setIdleUsers(server.getIdleUsers());
+                    // send to in-game users
+                    for (String userId : client.getGameContext().getGamingUsers()) {
+                        server.getClients().get(userId).write(toInGameUsers);
                     }
                     // send to host
-                    server.getClients().get(client.getGameContext().getCurrentUser()).write(toGameRelatedUsers);
+                    server.getClients().get(client.getGameContext().getCurrentUser()).write(toInGameUsers);
                     server.idleUserUpdate();
                 }
                 break;
