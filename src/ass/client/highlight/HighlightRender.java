@@ -33,8 +33,6 @@ public class HighlightRender extends DefaultTableCellRenderer {
         this.char_col = char_col;
         this.type = type;
         this.highlightRange =  calculateHighlightRange(gameTable, char_row, char_col);
-        System.out.println("highlightRange-row: " + this.highlightRange[0][0] + ", " + this.highlightRange[0][1]);
-        System.out.println("highlightRange-col: " + this.highlightRange[1][0] + ", " + this.highlightRange[1][1]);
     }
 
     @Override public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {

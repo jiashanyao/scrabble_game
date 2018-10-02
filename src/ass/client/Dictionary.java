@@ -16,4 +16,6 @@ public final class Dictionary {
 	public final static String LBL_IDLE_PLY = "Idle Players";
 	public final static String LBL_PLY_PLY = "Playing Players";
 	public final static String NOT_INVITE_SELF = "Please invite other players.";
+	public final static String ERR_CLIENT_ARGS = "Please input server IP, port and username.";
+    public final static String ERR_CONNECT_FAILED = "Connection Failed. Please input correct server IP and port.";
 }

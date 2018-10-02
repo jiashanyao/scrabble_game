@@ -57,6 +57,10 @@ public class ClientConsole extends JFrame {
     private GameContext gameContext;
 
     public static void main(String[] args) {
+        // Validation
+        if (null != args && 3 != args.length){
+            System.out.println(Dictionary.ERR_CLIENT_ARGS);
+        }
         EventQueue.invokeLater(new Runnable() {
             @Override public void run() {
                 try {
@@ -69,9 +73,11 @@ public class ClientConsole extends JFrame {
                     gt.setVisible(true);
 
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    System.out.println(e.getMessage());
+                    System.out.println(Dictionary.ERR_CONNECT_FAILED);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    System.out.println(e.getMessage());
+                    System.out.println(Dictionary.ERR_CONNECT_FAILED);
                 }
             }
         });
@@ -530,6 +536,7 @@ public class ClientConsole extends JFrame {
                             Long newVersion = headMessage.getTime();
                             ServerMessage.Type type = headMessage.getType();
                             lblMessageArea.setText(headMessage.getMessage());
+                            lblMessageArea.setForeground(Color.BLACK);
                             //update pane
                             if (ServerMessage.Type.ERROR.equals(type)) {
                                 JOptionPane.showMessageDialog(null, headMessage.getMessage());
