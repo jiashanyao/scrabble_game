@@ -453,7 +453,8 @@ public class ClientConsole extends JFrame {
                             }
                         }
                     }
-                } else if (GameContext.GameStatus.HIGHLIGHT.equals(gameContext.getGameStatus()) && username.equals(gameContext.getCurrentUser())) {
+                } else if (null != gameContext && GameContext.GameStatus.HIGHLIGHT.equals(gameContext.getGameStatus())
+                        && username.equals(gameContext.getCurrentUser())) {
                     //if gameTable is disable and the game status is highlight, click highlight box send message
 
                     //Components setting
