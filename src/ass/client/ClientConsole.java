@@ -4,6 +4,7 @@ import ass.client.highlight.HighlightListener;
 import ass.client.highlight.HighlightRender;
 import ass.communication.ClientMessage;
 import ass.communication.GameContext;
+import ass.communication.GameContext.GameStatus;
 import ass.communication.JsonUtility;
 import ass.communication.ServerMessage;
 import org.apache.commons.lang3.StringUtils;
@@ -53,6 +54,7 @@ public class ClientConsole extends JFrame {
     private Socket socket;
     private BufferedWriter writer;
     private ClientContext context;
+    private BroadcastMessage broadcastMessage;
     private String userId;
     private GameContext gameContext;
 
@@ -108,7 +110,8 @@ public class ClientConsole extends JFrame {
         this.socket = new Socket(url, port);
         this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"));
         this.context = new ClientContext();
-        ContextListener listener = new ContextListener(new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8")), this.context);
+        this.broadcastMessage = new BroadcastMessage();
+        ContextListener listener = new ContextListener(new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8")), this.context, this.broadcastMessage);
 
         this.userId = username;
         // pass username to server
@@ -527,6 +530,37 @@ public class ClientConsole extends JFrame {
 
         // start to listen
         listener.start();
+        
+        /* Create and start a thread dedicated for processing broadcast messages */
+        Thread broadcastHandling = new Thread() {
+            
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        ServerMessage broadcast = broadcastMessage.take();
+                        System.out.println("Broadcast thread is used!");
+                        lblMessageArea.setText(broadcast.getMessage());
+                        GameContext invitingContext = broadcast.getGameContext();
+                        //update idle users
+                        //TODO monitor here
+                        System.out.println("Renew listModel");
+                        DefaultListModel<String> listModel = new DefaultListModel<String>();
+                        List<String> invitedUsers =
+                            null != invitingContext && null != invitingContext.getInvitedUser() ? invitingContext.getInvitedUser() : new ArrayList<>();
+                        for (String user : broadcast.getIdleUsers()) {
+                            listModel.addElement(invitedUsers.contains(user) ? user + " (invited)" : user);
+                        }
+                        idlePlayerList.setModel(listModel);
+                    } catch (InterruptedException e) {
+                        //TODO: handle exception
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
+        broadcastHandling.start();
+        
         BackgroundThread backgroundThread = new BackgroundThread() {
             @Override public void run() {
                 while (true) {
@@ -541,18 +575,6 @@ public class ClientConsole extends JFrame {
                             if (ServerMessage.Type.ERROR.equals(type)) {
                                 JOptionPane.showMessageDialog(null, headMessage.getMessage());
                                 System.exit(0);
-                            } else if (ServerMessage.Type.BROADCAST.equals(type)) {
-                                GameContext invitingContext = headMessage.getGameContext();
-                                //update idle users
-                                //TODO monitor here
-                                System.out.println("Renew listModel");
-                                DefaultListModel<String> listModel = new DefaultListModel<String>();
-                                List<String> invitedUsers =
-                                    null != invitingContext && null != invitingContext.getInvitedUser() ? invitingContext.getInvitedUser() : new ArrayList<>();
-                                for (String user : headMessage.getIdleUsers()) {
-                                    listModel.addElement(invitedUsers.contains(user) ? user + " (invited)" : user);
-                                }
-                                idlePlayerList.setModel(listModel);
                             } else {
                                 // gaming status and inviting status
                                 //update global variable
@@ -573,22 +595,25 @@ public class ClientConsole extends JFrame {
                                 //update players table
                                 Object[][] playerModel;
                                 List<String> gamingUsers = gameContext.getGamingUsers();
-                                Map<String, Integer> scoresMap = null != gameContext.getScores() ? gameContext.getScores() : new HashMap<String, Integer>();
-                                if (null != gamingUsers && gamingUsers.size() > 0) {
+                                if (gamingUsers.contains(userId) || status == GameStatus.IDLING) {  // when gaming or game ends
+                                    Map<String, Integer> scoresMap = null != gameContext.getScores() ? gameContext.getScores() : new HashMap<String, Integer>();
+                                    if (null != gamingUsers && gamingUsers.size() > 0) {
 
-                                    int index = 0;
-                                    playerModel = new Object[gamingUsers.size()][3];
-                                    //System.out.println("Gaming size:" + gamingUsers.size());
-                                    for (String userId : gamingUsers) {
-                                        playerModel[index][0] = userId;
-                                        playerModel[index][1] = userId.equals(currentPlayer) ? "playing" : "";
-                                        playerModel[index][2] = null == scoresMap.get(userId) ? "" : scoresMap.get(userId);
-                                        index++;
+                                        int index = 0;
+                                        playerModel = new Object[gamingUsers.size()][3];
+                                        // System.out.println("Gaming size:" + gamingUsers.size());
+                                        for (String userId : gamingUsers) {
+                                            playerModel[index][0] = userId;
+                                            playerModel[index][1] = userId.equals(currentPlayer) ? "playing" : "";
+                                            playerModel[index][2] = null == scoresMap.get(userId) ? "" : scoresMap.get(userId);
+                                            index++;
+                                        }
+                                    } else {
+                                        playerModel = new Object[][] {};
                                     }
-                                } else {
-                                    playerModel = new Object[][] {};
+                                    playerTable.setModel(
+                                            new DefaultTableModel(playerModel, plColumnNames));
                                 }
-                                playerTable.setModel(new DefaultTableModel(playerModel, plColumnNames));
 
                                 //update button status
                                 switch (status) {
