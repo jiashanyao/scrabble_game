@@ -514,6 +514,11 @@ public class ClientConsole extends JFrame {
             }
 
         });
+        gameTable.setEnabled(false);
+        btnInvite.setEnabled(true);
+        btnStartGame.setEnabled(false);
+        btnPass.setEnabled(false);
+        btnEndGame.setEnabled(false);
 
         // start to listen
         listener.start();
@@ -525,6 +530,7 @@ public class ClientConsole extends JFrame {
                         if (null != headMessage) {
                             Long newVersion = headMessage.getTime();
                             ServerMessage.Type type = headMessage.getType();
+                            lblMessageArea.setText(headMessage.getMessage());
                             //update pane
                             if (ServerMessage.Type.ERROR.equals(type)) {
                                 JOptionPane.showMessageDialog(null, headMessage.getMessage());
@@ -548,10 +554,13 @@ public class ClientConsole extends JFrame {
                                 String currentPlayer = gameContext.getCurrentUser();
                                 //update game board
                                 GameContext.GameStatus status = gameContext.getGameStatus();
-                                if (null != gameContext.getGameBoard()) {
-                                    gameTable.setModel(new DefaultTableModel(gameContext.getGameBoard(), gameColumnNames));
-                                } else {
-                                    gameTable.setModel(new DefaultTableModel(plainBoard, gameColumnNames));
+                                String[][] gameBoard = gameContext.getGameBoard();
+
+                                for (int i = 0; i < BOARD_SIZE; i++) {
+                                    for (int j = 0; j < BOARD_SIZE; j++) {
+                                        String value = null != gameBoard ? gameBoard[i][j] : "";
+                                        gameTable.getModel().setValueAt(value, i, j);
+                                    }
                                 }
                                 setTableRender(gameTable);
 
@@ -587,7 +596,7 @@ public class ClientConsole extends JFrame {
                                     case INVITING:
                                         gameTable.setEnabled(false);
                                         btnInvite.setEnabled(userId.equals(currentPlayer));
-                                        btnStartGame.setEnabled(userId.equals(currentPlayer));
+                                        btnStartGame.setEnabled(userId.equals(currentPlayer) && gameContext.getGamingUsers().size() > 1);
                                         btnPass.setEnabled(false);
                                         btnEndGame.setEnabled(false);
                                         break;
