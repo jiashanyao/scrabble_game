@@ -136,7 +136,11 @@ public class MessageHandling extends Thread {
                 charContext.setCellX(x);
                 charContext.setCellY(y);
                 String[][] gameBoard = charContext.getGameBoard();
-                gameBoard[x][y] = cm.getCellChar();
+                if (gameBoard[x][y] == null) {  // check if a cell already has a char
+                    gameBoard[x][y] = cm.getCellChar();
+                } else {
+                    break;
+                }
                 charContext.setGameBoard(gameBoard);
                 charContext.setGameStatus(GameStatus.HIGHLIGHT);
                 client.setGameContext(charContext);
