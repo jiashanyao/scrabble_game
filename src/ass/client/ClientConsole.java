@@ -425,7 +425,6 @@ public class ClientConsole extends JFrame {
                 if (gameTable.isEnabled()) {
                     int x = gameTable.rowAtPoint(me.getPoint());
                     int y = gameTable.columnAtPoint(me.getPoint());
-                    System.out.println(x + "," + y);
                     String cellValue = (String) gameTable.getModel().getValueAt(x, y);
 
                     //TODO: when game_Stauts is playing && userID is currentuser && grid is empty, popup chooseCharcter

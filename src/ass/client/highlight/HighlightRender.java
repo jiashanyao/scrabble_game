@@ -13,6 +13,8 @@ public class HighlightRender extends DefaultTableCellRenderer {
     private int char_col;
     private int type;
     private JTable gameTable;
+    private int[][] highlightRange;
+
     private Color hlColor = new Color(102, 76, 36);
     private Color hlFont = Color.WHITE;
     private Color bkColor = new Color(255, 255, 204);
@@ -30,12 +32,14 @@ public class HighlightRender extends DefaultTableCellRenderer {
         this.char_row = char_row;
         this.char_col = char_col;
         this.type = type;
+        this.highlightRange =  calculateHighlightRange(gameTable, char_row, char_col);
+        System.out.println("highlightRange-row: " + this.highlightRange[0][0] + ", " + this.highlightRange[0][1]);
+        System.out.println("highlightRange-col: " + this.highlightRange[1][0] + ", " + this.highlightRange[1][1]);
     }
 
     @Override public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
-        int[][] highlightRange = calculateHighlightRange(table, row, col);
-        int[] highlightRange_cellsOfRow = highlightRange[0];
-        int[] highlightRange_cellsOfCol = highlightRange[1];
+        int[] highlightRange_cellsOfRow = this.highlightRange[0];
+        int[] highlightRange_cellsOfCol = this.highlightRange[1];
 
         //Cells are by default rendered as a JLabel.
         JLabel l = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
@@ -88,11 +92,10 @@ public class HighlightRender extends DefaultTableCellRenderer {
         int[][] result = new int[2][2];
         int[] cellsOfRow = new int[2];
         int[] cellsOfCol = new int[2];
-        Object value;
 
         // get the range of the row
         for (int i = char_col; i >= 0; i--) {
-            value = gameTable.getModel().getValueAt(char_row, i);
+            Object value = gameTable.getModel().getValueAt(char_row, i);
             if (null == value || StringUtils.isBlank(value.toString())) {
                 cellsOfRow[0] = i + 1;
                 break;
@@ -101,7 +104,7 @@ public class HighlightRender extends DefaultTableCellRenderer {
             }
         }
         for (int i = char_col; i < ClientConsole.BOARD_SIZE; i++) {
-            value = gameTable.getModel().getValueAt(char_row, i);
+            Object value = gameTable.getModel().getValueAt(char_row, i);
             if (null == value || StringUtils.isBlank(value.toString())) {
                 cellsOfRow[1] = i - 1;
                 break;
@@ -112,7 +115,7 @@ public class HighlightRender extends DefaultTableCellRenderer {
 
         // get the range of the column
         for (int i = char_row; i >= 0; i--) {
-            value = gameTable.getModel().getValueAt(i, char_col);
+            Object value = gameTable.getModel().getValueAt(i, char_col);
             if (null == value || StringUtils.isBlank(value.toString())) {
                 cellsOfCol[0] = i + 1;
                 break;
@@ -121,7 +124,7 @@ public class HighlightRender extends DefaultTableCellRenderer {
             }
         }
         for (int i = char_row; i < ClientConsole.BOARD_SIZE; i++) {
-            value = gameTable.getModel().getValueAt(i, char_col);
+            Object value = gameTable.getModel().getValueAt(i, char_col);
             if (null == value || StringUtils.isBlank(value.toString())) {
                 cellsOfCol[1] = i - 1;
                 break;
