@@ -106,7 +106,7 @@ public class MessageHandling extends Thread {
                 break;
             case START: {
                 GameContext startContext = client.getGameContext();
-                if (startContext.getGameStatus().equals(GameStatus.INVITING)) {
+                if (startContext.getGameStatus().equals(GameStatus.INVITING) && startContext.getGamingUsers().size() >= 2) {
                     String currentUserID = cm.getUserId();
                     startContext.setGameStatus(GameStatus.GAMING);
                     startContext.setCurrentUser(currentUserID);
