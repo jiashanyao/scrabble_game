@@ -14,10 +14,10 @@ import ass.server.ClientConnection.ClientState;
 
 public class MessageHandling extends Thread {
 
-    private Server server;
+    private static Server server;
 
     public MessageHandling(Server server) {
-        this.server = server;
+        MessageHandling.server = server;    // singleton
         super.setName(this.getClass().getName());
     }
 
@@ -86,8 +86,8 @@ public class MessageHandling extends Thread {
             case INVITATION_CONFIRM:
                 if (client.getClientState() == ClientConnection.ClientState.INVITED
                         && client.getGameContext() != null
-                        && client.getGameContext().getGameStatus() == GameStatus.INVITING
-                        && cm.isAccept()) { // whether eligible to join a game
+                        && client.getGameContext().getGameStatus() == GameStatus.INVITING   // cannot join an started game (GAMING) or an ended game (IDLING)
+                        && cm.isAccept()) {
                     client.getGameContext().getGamingUsers().add(client.getUserId()); // join game of latest invitation
                     client.setClientState(ClientState.INVITING); // after joining, he can invite
                     // other users as well
@@ -257,23 +257,39 @@ public class MessageHandling extends Thread {
                 }
             }
             case END:
-                GameContext endContext = new GameContext();
-                endContext.setGameStatus(GameStatus.IDLING);
-                ServerMessage endMessage = new ServerMessage(endContext);
-                endMessage.setIdleUsers(server.getIdleUsers());
-                endMessage.setType(Type.INFORMATION);
-                Map.Entry<String, Integer> winner = getWinner(client.getGameContext().getScores());
-                endMessage.setMessage("Game End. Winner is " + winner.getKey() + ", score is " + winner.getValue());
-                for (String userId : client.getGameContext().getGamingUsers()) {
-                    server.getClients().get(userId).write(endMessage);
-                }
-                changeClientThreadStatus(client.getGameContext().getGamingUsers(), ClientState.IDLE);
-                server.idleUserUpdate();
-                client.setGameContext(null);
+                endGame(client);
                 break;
             default:
                 break;
         }
+    }
+    
+    /**
+     * End the game the client is playing. This is a static method for invocation from ClientConnection.
+     * @param client
+     */
+    public static void endGame(ClientConnection client) {
+        if (client.getClientState() == ClientState.INVITED || client.getClientState() == ClientState.IDLE) {
+            return;  // if a user is invited or idle, he cannot end any game.
+        }
+        GameContext endContext = new GameContext();
+        endContext.setGameStatus(GameStatus.IDLING);
+        ServerMessage endMessage = new ServerMessage(endContext);
+        endMessage.setIdleUsers(server.getIdleUsers());
+        endMessage.setType(Type.INFORMATION);
+        Map.Entry<String, Integer> winner = getWinner(client.getGameContext().getScores());
+        if (winner != null) {
+            endMessage.setMessage("Game End. Winner is " + winner.getKey() + ", score is " + winner.getValue());
+        }else {
+            endMessage.setMessage("Game has not started. No scores available.");
+        }
+        for (String userId : client.getGameContext().getGamingUsers()) {
+            server.getClients().get(userId).write(endMessage);
+        }
+        changeClientThreadStatus(client.getGameContext().getGamingUsers(), ClientState.IDLE);
+        server.idleUserUpdate();
+        client.getGameContext().setGameStatus(GameStatus.IDLING);   // to prevent users from joining an ended game
+        client.setGameContext(null);
     }
 
     private void notifyInGameClients(GameContext gameContext, ServerMessage serverMessage) {
@@ -350,8 +366,8 @@ public class MessageHandling extends Thread {
         return uid;
     }
 
-    private void changeClientThreadStatus(List<String> gamingUsers, ClientState cType) {
-        Map<String, ClientConnection> clients = this.server.getClients();
+    private static void changeClientThreadStatus(List<String> gamingUsers, ClientState cType) {
+        Map<String, ClientConnection> clients = server.getClients();
         Iterator<Entry<String, ClientConnection>> entries = clients.entrySet().iterator();
         while (entries.hasNext()) {
             Map.Entry<String, ClientConnection> tClient = entries.next();
@@ -369,7 +385,7 @@ public class MessageHandling extends Thread {
         }
     }
 
-    private Map.Entry<String, Integer> getWinner(Map<String, Integer> scoreList) {
+    private static Map.Entry<String, Integer> getWinner(Map<String, Integer> scoreList) {
         Map.Entry<String, Integer> winner = null;
         for (Map.Entry<String, Integer> scoreItem : scoreList.entrySet()) {
             if (winner == null || (scoreItem.getValue().compareTo(winner.getValue()) > 0)) {

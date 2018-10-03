@@ -6,10 +6,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.util.Map;
 
 import ass.communication.ClientMessage;
 import ass.communication.GameContext;
 import ass.communication.GameContext.GameStatus;
+import ass.communication.ServerMessage.Type;
+import ass.server.ClientConnection.ClientState;
 import ass.communication.JsonUtility;
 import ass.communication.ServerMessage;
 
@@ -77,6 +80,7 @@ public class ClientConnection extends Thread {
                         }
                         System.out.println("get message: " + input);
                     }
+                    MessageHandling.endGame(thisClientConnection);  // end his game when a client exits to fix the bug that a user can join a game whose host exits.
                     clientSocket.close();
                     server.getClients().remove(userId, thisClientConnection);
                     server.idleUserUpdate();
