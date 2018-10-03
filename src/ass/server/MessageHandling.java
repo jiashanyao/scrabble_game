@@ -84,10 +84,11 @@ public class MessageHandling extends Thread {
                 }
                 break;
             case INVITATION_CONFIRM:
-                if (client.getClientState() == ClientConnection.ClientState.INVITED && client.getGameContext() != null && cm.isAccept()) {
-                    client.getGameContext().getGamingUsers().add(client.getUserId()); // join game
-                    // of latest
-                    // invitation
+                if (client.getClientState() == ClientConnection.ClientState.INVITED
+                        && client.getGameContext() != null
+                        && client.getGameContext().getGameStatus() == GameStatus.INVITING
+                        && cm.isAccept()) { // whether eligible to join a game
+                    client.getGameContext().getGamingUsers().add(client.getUserId()); // join game of latest invitation
                     client.setClientState(ClientState.INVITING); // after joining, he can invite
                     // other users as well
                     ServerMessage toInGameUsers = new ServerMessage(client.getUserId() + " has joined game.");
@@ -127,6 +128,15 @@ public class MessageHandling extends Thread {
                 break;
             }
             case CHARACTER: {
+                if (client.getClientState().equals(ClientState.IDLE)) { // If the user is not in any game,
+                    // ignore this message and sends an game-already-ends message to the user.
+                    GameContext endContext = new GameContext();
+                    endContext.setGameStatus(GameStatus.IDLING);
+                    ServerMessage gameAlreadyEnds = new ServerMessage(endContext);
+                    gameAlreadyEnds.setMessage("Game already ends by others!");
+                    client.write(gameAlreadyEnds);
+                    break;
+                }
                 if (client.getClientState().equals(ClientState.PASSING)) {
                     client.setClientState(ClientState.GAMING);
                 }
