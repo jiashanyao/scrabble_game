@@ -128,7 +128,10 @@ public class MessageHandling extends Thread {
                 break;
             }
             case CHARACTER: {
-                if (client.getClientState().equals(ClientState.IDLE)) { // If the user is not in any game,
+                if (client.getClientState().equals(ClientState.PASSING)) {
+                    client.setClientState(ClientState.GAMING);
+                }
+                if (!client.getClientState().equals(ClientState.GAMING)) {  // if the user is not gaming
                     // ignore this message and sends an game-already-ends message to the user.
                     GameContext endContext = new GameContext();
                     endContext.setGameStatus(GameStatus.IDLING);
@@ -136,9 +139,6 @@ public class MessageHandling extends Thread {
                     gameAlreadyEnds.setMessage("Game already ends by others!");
                     client.write(gameAlreadyEnds);
                     break;
-                }
-                if (client.getClientState().equals(ClientState.PASSING)) {
-                    client.setClientState(ClientState.GAMING);
                 }
                 int x = cm.getCellX();
                 int y = cm.getCellY();
@@ -161,6 +161,8 @@ public class MessageHandling extends Thread {
                 break;
             }
             case HIGHLIGHT: {
+                if (!client.getClientState().equals(ClientState.GAMING))
+                    break;  // client can only highlight when GAMING
                 String[] highStr = cm.getHighLight();
                 GameContext highContext = client.getGameContext();
                 if ((highStr == null) || (highStr[0].equals("") && highStr[1].equals(""))) {
@@ -189,7 +191,9 @@ public class MessageHandling extends Thread {
                     client.write(sMessage);
                     break;
                 }
-
+                if (!client.getClientState().equals(ClientState.VOTING)) {
+                    break;  // if game ends by others while this player is voting, this player cannot vote.
+                }
                 client.setClientState(ClientState.GAMING);
                 GameContext voteContext = client.getGameContext();
                 Map<String, ClientConnection> clients = this.server.getClients();

@@ -103,8 +103,7 @@ public class ClientConnection extends Thread {
             writer.newLine();
             writer.flush();
         } catch (IOException e) {
-            System.out
-                    .println("Client " + clientSocket.getInetAddress().getHostAddress() + ": Connection interrupted!");
+            System.out.println(userId + "\t Connection interrupted!");
         }
     }
 
