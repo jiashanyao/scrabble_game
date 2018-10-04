@@ -73,12 +73,10 @@ public class MessageHandling extends Thread {
                         cc.setClientState(ClientState.INVITED);
                         ServerMessage invitation = new ServerMessage(client.getUserId() + " invites you to a game. yes/no?");
                         invitation.setType(ServerMessage.Type.REQUEST);
-                        invitation.setIdleUsers(server.getIdleUsers());
                         invitation.setGameContext(gameContext);
                         cc.write(invitation);
                     }
                     sm.setGameContext(gameContext);
-                    sm.setIdleUsers(server.getIdleUsers());
                     client.write(sm);
                     server.idleUserUpdate();
                 }
@@ -89,13 +87,11 @@ public class MessageHandling extends Thread {
                         && client.getGameContext().getGameStatus() == GameStatus.INVITING   // cannot join an started game (GAMING) or an ended game (IDLING)
                         && cm.isAccept()) {
                     client.getGameContext().getGamingUsers().add(client.getUserId()); // join game of latest invitation
-                    client.setClientState(ClientState.INVITING); // after joining, he can invite
-                    // other users as well
+                    client.setClientState(ClientState.INVITING); // after joining, he can invite other users as well
                     ServerMessage toInGameUsers = new ServerMessage(client.getUserId() + " has joined game.");
                     /* update Playing Players list */
                     toInGameUsers.setType(Type.INFORMATION);
                     toInGameUsers.setGameContext(client.getGameContext());
-                    toInGameUsers.setIdleUsers(server.getIdleUsers());
                     // send to in-game users
                     for (String userId : client.getGameContext().getGamingUsers()) {
                         server.getClients().get(userId).write(toInGameUsers);
@@ -120,7 +116,6 @@ public class MessageHandling extends Thread {
                     }
 
                     ServerMessage startInformation = new ServerMessage(startContext);
-                    startInformation.setIdleUsers(server.getIdleUsers());
                     startInformation.setType(Type.INFORMATION);
                     startInformation.setMessage("Game Start!");
                     notifyInGameClients(startContext, startInformation);
@@ -279,7 +274,6 @@ public class MessageHandling extends Thread {
         GameContext endContext = new GameContext();
         endContext.setGameStatus(GameStatus.IDLING);
         ServerMessage endMessage = new ServerMessage(endContext);
-        endMessage.setIdleUsers(server.getIdleUsers());
         endMessage.setType(Type.INFORMATION);
         Map.Entry<String, Integer> winner = getWinner(client.getGameContext().getScores());
         if (winner != null) {
