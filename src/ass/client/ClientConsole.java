@@ -41,10 +41,8 @@ public class ClientConsole extends JFrame {
         map.put(GameContext.GameStatus.HIGHLIGHT, ClientMessage.Type.HIGHLIGHT);
         map.put(GameContext.GameStatus.VOTING, ClientMessage.Type.VOTE);
         RESPONSE_MAP = Collections.unmodifiableMap(map);
-
         GAME_CELL_RENDER = new DefaultTableCellRenderer();
         GAME_CELL_RENDER.setHorizontalAlignment(SwingConstants.CENTER);
-
     }
 
     private String[][] plainBoard;
@@ -60,7 +58,7 @@ public class ClientConsole extends JFrame {
 
     public static void main(String[] args) {
         // Validation
-        if (null != args && 3 != args.length){
+        if (null != args && 3 != args.length) {
             System.out.println(Dictionary.ERR_CLIENT_ARGS);
         }
         EventQueue.invokeLater(new Runnable() {
@@ -69,14 +67,15 @@ public class ClientConsole extends JFrame {
                     String url = args[0];
                     Integer port = Integer.parseInt(args[1]);
                     String username = args[2];
-                    ClientConsole gt = new ClientConsole(url, port, username);
-                    gt.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                    gt.pack();
-                    gt.setVisible(true);
 
-                } catch (IOException e) {
-                    System.out.println(e.getMessage());
-                    System.out.println(Dictionary.ERR_CONNECT_FAILED);
+                    ClientLogin window = new ClientLogin();
+                    window.getFrame().setVisible(true);
+
+                    //                    ClientConsole gt = new ClientConsole(url, port, username);
+                    //                    gt.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    //                    gt.pack();
+                    //                    gt.setVisible(true);
+
                 } catch (Exception e) {
                     System.out.println(e.getMessage());
                     System.out.println(Dictionary.ERR_CONNECT_FAILED);
@@ -476,8 +475,7 @@ public class ClientConsole extends JFrame {
                             }
                         }
                     }
-                } else if (null != gameContext && GameContext.GameStatus.HIGHLIGHT.equals(gameContext.getGameStatus())
-                        && username.equals(gameContext.getCurrentUser())) {
+                } else if (null != gameContext && GameContext.GameStatus.HIGHLIGHT.equals(gameContext.getGameStatus()) && username.equals(gameContext.getCurrentUser())) {
                     //if gameTable is disable and the game status is highlight, click highlight box send message
 
                     //Components setting
@@ -530,12 +528,11 @@ public class ClientConsole extends JFrame {
 
         // start to listen
         listener.start();
-        
+
         /* Create and start a thread dedicated for processing broadcast messages */
         Thread broadcastHandling = new Thread() {
-            
-            @Override
-            public void run() {
+
+            @Override public void run() {
                 while (true) {
                     try {
                         ServerMessage broadcast = broadcastMessage.take();
@@ -546,8 +543,7 @@ public class ClientConsole extends JFrame {
                         //TODO monitor here
                         System.out.println("Renew listModel");
                         DefaultListModel<String> listModel = new DefaultListModel<String>();
-                        List<String> invitedUsers =
-                            null != invitingContext && null != invitingContext.getInvitedUser() ? invitingContext.getInvitedUser() : new ArrayList<>();
+                        List<String> invitedUsers = null != invitingContext && null != invitingContext.getInvitedUser() ? invitingContext.getInvitedUser() : new ArrayList<>();
                         for (String user : broadcast.getIdleUsers()) {
                             listModel.addElement(invitedUsers.contains(user) ? user + " (invited)" : user);
                         }
@@ -560,7 +556,7 @@ public class ClientConsole extends JFrame {
             }
         };
         broadcastHandling.start();
-        
+
         BackgroundThread backgroundThread = new BackgroundThread() {
             @Override public void run() {
                 while (true) {
@@ -611,8 +607,7 @@ public class ClientConsole extends JFrame {
                                     } else {
                                         playerModel = new Object[][] {};
                                     }
-                                    playerTable.setModel(
-                                            new DefaultTableModel(playerModel, plColumnNames));
+                                    playerTable.setModel(new DefaultTableModel(playerModel, plColumnNames));
                                 }
 
                                 //update button status
